@@ -1,0 +1,13 @@
+<VirtualHost *:80>
+	ServerName <%= @params[:server_name] %>
+	DocumentRoot <%= @params[:docroot] %>
+  RailsEnv <%= @params[:rails_env] %>
+	# http://cakebaker.42dh.com/2010/01/17/rails-3-and-passenger/
+  RackEnv <%= @params[:rack_env] %>
+	<Directory <%= @params[:docroot] %>>
+		Options MultiViews Indexes SymLinksIfOwnerMatch IncludesNoExec
+		AllowOverride All
+		Order allow,deny
+		Allow from all
+	</Directory>
+</VirtualHost>
