@@ -19,11 +19,12 @@
 
 require 'pp'
 
-::APPS = %w{ kayak1 data1 wlpf1 }
+::APPS = node[:hagar_apps]
 ::PASSENGER_MAX_INSTANCES_PER_APP = 2
-::RAILS_VERSION = '2.3.5'
+::RAILS_2_VERSION = '2.3.5'
+::RAILS_3_VERSION = '3.0.0.beta2'
 ::HOME = '/home/vagrant'
-::SHARED_FOLDER = '/vagrant'
+::SHARED_FOLDER = '/vagrant/apps_enabled'
 ::PATH = '/opt/ruby-enterprise/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games'
 ::UNIVERSE = 'vagrant'
 
@@ -64,6 +65,9 @@ execute "manually upgrade memcached" do
     make;
     make install clean;
     ln -s /usr/local/bin/memcached /usr/bin/memcached;
+    cd;
+    rm -rf memcached-1.4.5;
+    rm -f memcached-1.4.5.tar.gz;
   }
 end
 execute "bound memcached" do
@@ -102,15 +106,23 @@ execute "update gem system" do
   command '/opt/ruby-enterprise/bin/gem update --system'
 end
 
-gem_versions = Hash.new
+execute 'make sure ruby enterprise gem is used' do
+  user 'root'
+  command %{
+    rm -f /usr/bin/gem;
+    ln -s /opt/ruby-enterprise/bin/gem /usr/bin/gem;
+  }
+end
+
+rails2_gems = Hash.new
 ::APPS.each do |name|
   IO.readlines("#{::SHARED_FOLDER}/#{name}/config/environment.rb").grep(/config\.gem/).each do |line|
     if /config\.gem ['"](.*?)['"],.*\:version => ['"](.*?)['"]/.match line
-      gem_versions[$1] ||= Array.new
-      gem_versions[$1] << $2
+      rails2_gems[$1] ||= Array.new
+      rails2_gems[$1] << $2
     elsif /config\.gem ['"](.*?)['"]/.match line
-      gem_versions[$1] ||= Array.new
-      gem_versions[$1] << 'latest'
+      rails2_gems[$1] ||= Array.new
+      rails2_gems[$1] << 'latest'
     else
       raise "Can't read #{line}"
     end
@@ -118,11 +130,11 @@ gem_versions = Hash.new
 end
 
 #common gems
-gem_versions['mysql'] = ['latest']
-gem_versions['sqlite3-ruby'] = ['latest']
-gem_versions['rails'] = [::RAILS_VERSION]
+rails2_gems['mysql'] = ['latest']
+rails2_gems['sqlite3-ruby'] = ['latest']
+rails2_gems['rails'] = [::RAILS_2_VERSION]
 
-gem_versions.each do |name, versions|
+rails2_gems.each do |name, versions|
   versions.uniq.each do |x|
     ree_gem name do
       version x unless x == 'latest'
@@ -137,6 +149,29 @@ gem_versions.each do |name, versions|
       end
     end
   end
+end
+
+# rails3 stuff
+%w{mysql tzinfo builder i18n memcache-client rack rake rack-test erubis mail text-format thor bundler}.each do |name|
+  ree_gem name do
+    source "http://rubygems.org"
+    not_if "/opt/ruby-enterprise/bin/gem list --installed #{name}"
+  end
+end
+ree_gem 'rack-mount' do
+  source 'http://rubygems.org'
+  version '0.4.0'
+  not_if '/opt/ruby-enterprise/bin/gem list --installed --version 0.4.0 rack-mount'
+end
+ree_gem 'railties' do
+  source 'http://rubygems.org'
+  version ::RAILS_3_VERSION
+  not_if "/opt/ruby-enterprise/bin/gem list --installed --version #{::RAILS_3_VERSION} railties"
+end
+ree_gem 'rails' do
+  source 'http://rubygems.org'
+  version '3.0.0.beta2'
+  not_if "/opt/ruby-enterprise/bin/gem list --installed --version #{::RAILS_3_VERSION} rails"
 end
 
 include_recipe 'passenger_enterprise::apache2'
@@ -192,6 +227,14 @@ end
     rails_env 'development'
     rack_env 'development'
     cookbook 'vagrant_main'
+  end
+  
+  if File.readable?(File.join(rails_root, 'Gemfile'))
+    execute 'run bundler install' do
+      user 'vagrant'
+      command '/opt/ruby-enterprise/bin/bundle install'
+      cwd rails_root
+    end
   end
 end
 
