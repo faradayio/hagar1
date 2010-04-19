@@ -45,7 +45,31 @@ execute "manually overwrite path" do
   command "PATH=\"#{::PATH}\"; export PATH; /bin/echo \"PATH=$PATH\" > /etc/environment"
 end
 
-require_recipe "memcached"
+package 'curl'
+
+# start memcached
+package 'libevent-dev'
+require_recipe "memcached" # old memcached
+execute "manually upgrade memcached" do
+  user 'root'
+  command %{
+    cd;
+    curl -O http://memcached.googlecode.com/files/memcached-1.4.5.tar.gz;
+    tar -xzf memcached-1.4.5.tar.gz;
+    cd memcached-1.4.5;
+    /home/vagrant/configure;
+    make;
+    make install clean;
+    mv /usr/bin/memcached /usr/bin/memcached-old;
+    ln -s /usr/local/bin/memcached /usr/bin/memcached;
+  }
+  not_if 'memcached -h | grep 1.4.5'
+end
+execute "bound memcached" do
+  user 'root'
+  command '/etc/init.d/memcached restart'
+end
+# end memcached
 
 include_recipe "ruby_enterprise"
 
