@@ -80,6 +80,16 @@ include_recipe "ruby_enterprise"
 
 include_recipe "mysql::server"
 
+execute "kill and restart mysql" do
+  user 'root'
+  command %{
+    killall mysqld_safe;
+    sleep 2;
+    /etc/init.d/mysql start;
+    sleep 2;
+  }
+end
+
 package "sqlite3"
 package "libsqlite3-dev"
 
@@ -116,7 +126,9 @@ end
 
 rails2_gems = Hash.new
 ::APPS.each do |name|
-  IO.readlines("#{::SHARED_FOLDER}/#{name}/config/environment.rb").grep(/config\.gem/).each do |line|
+  proto_rails_root = File.join ::SHARED_FOLDER, name
+  next if File.readable?(File.join(proto_rails_root, 'Gemfile'))
+  IO.readlines(File.join(proto_rails_root, 'config', 'environment.rb')).grep(/config\.gem/).each do |line|
     if /config\.gem ['"](.*?)['"],.*\:version => ['"](.*?)['"]/.match line
       rails2_gems[$1] ||= Array.new
       rails2_gems[$1] << $2
