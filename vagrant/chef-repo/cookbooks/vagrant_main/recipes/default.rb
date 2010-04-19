@@ -18,7 +18,6 @@
 #
 
 require 'pp'
-require 'ruby-debug'
 
 ::APPS = %w{ kayak1 data1 wlpf1 }
 ::PASSENGER_MAX_INSTANCES_PER_APP = 2
