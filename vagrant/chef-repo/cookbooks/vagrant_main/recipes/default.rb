@@ -54,16 +54,17 @@ execute "manually upgrade memcached" do
   user 'root'
   command %{
     cd;
+    rm -rf memcached-1.4.5;
+    rm -f memcached-1.4.5.tar.gz;
+    rm -f /usr/bin/memcached;
     curl -O http://memcached.googlecode.com/files/memcached-1.4.5.tar.gz;
     tar -xzf memcached-1.4.5.tar.gz;
     cd memcached-1.4.5;
-    /home/vagrant/configure;
+    /home/vagrant/memcached-1.4.5/configure;
     make;
     make install clean;
-    mv /usr/bin/memcached /usr/bin/memcached-old;
     ln -s /usr/local/bin/memcached /usr/bin/memcached;
   }
-  not_if 'memcached -h | grep 1.4.5'
 end
 execute "bound memcached" do
   user 'root'
