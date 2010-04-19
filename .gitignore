@@ -1,4 +1,6 @@
-.vagrant
-data1
-wlpf1
-kayak1
+/.vagrant
+/vagrant_main
+/apps_enabled/data1
+/apps_enabled/wlpf1
+/apps_enabled/kayak1
+/apps_enabled/cm1
