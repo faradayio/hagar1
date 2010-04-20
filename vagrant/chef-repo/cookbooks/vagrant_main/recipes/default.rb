@@ -69,7 +69,7 @@ execute "manually upgrade memcached" do
     rm -f memcached-1.4.5.tar.gz;
   }
 end
-execute "bound memcached" do
+execute "bounce memcached" do
   user 'root'
   command '/etc/init.d/memcached restart'
 end
