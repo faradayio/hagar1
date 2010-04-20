@@ -22,7 +22,6 @@ require 'pp'
 ::APPS = node[:hagar_apps]
 ::PASSENGER_MAX_INSTANCES_PER_APP = 2
 ::RAILS_2_VERSION = '2.3.5'
-::RAILS_3_VERSION = '3.0.0.beta2'
 ::HOME = '/home/vagrant'
 ::SHARED_FOLDER = '/vagrant/apps_enabled'
 ::PATH = '/opt/ruby-enterprise/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games'
@@ -164,26 +163,31 @@ rails2_gems.each do |name, versions|
 end
 
 # rails3 stuff
-%w{mysql tzinfo builder i18n memcache-client rack rake rack-test erubis mail text-format thor bundler}.each do |name|
-  ree_gem name do
-    source "http://rubygems.org"
-    not_if "/opt/ruby-enterprise/bin/gem list --installed #{name}"
-  end
-end
-ree_gem 'rack-mount' do
-  source 'http://rubygems.org'
-  version '0.4.0'
-  not_if '/opt/ruby-enterprise/bin/gem list --installed --version 0.4.0 rack-mount'
-end
-ree_gem 'railties' do
-  source 'http://rubygems.org'
-  version ::RAILS_3_VERSION
-  not_if "/opt/ruby-enterprise/bin/gem list --installed --version #{::RAILS_3_VERSION} railties"
-end
-ree_gem 'rails' do
-  source 'http://rubygems.org'
-  version '3.0.0.beta2'
-  not_if "/opt/ruby-enterprise/bin/gem list --installed --version #{::RAILS_3_VERSION} rails"
+# ::RAILS_3_VERSION = '3.0.0.beta3'
+# %w{mysql tzinfo builder i18n memcache-client rack rake rack-test erubis mail text-format thor bundler}.each do |name|
+#   ree_gem name do
+#     source "http://rubygems.org"
+#     not_if "/opt/ruby-enterprise/bin/gem list --installed #{name}"
+#   end
+# end
+# ree_gem 'rack-mount' do
+#   source 'http://rubygems.org'
+#   version '0.4.0'
+#   not_if '/opt/ruby-enterprise/bin/gem list --installed --version 0.4.0 rack-mount'
+# end
+# ree_gem 'railties' do
+#   source 'http://rubygems.org'
+#   version ::RAILS_3_VERSION
+#   not_if "/opt/ruby-enterprise/bin/gem list --installed --version #{::RAILS_3_VERSION} railties"
+# end
+# ree_gem 'rails' do
+#   source 'http://rubygems.org'
+#   version '3.0.0.beta2'
+#   not_if "/opt/ruby-enterprise/bin/gem list --installed --version #{::RAILS_3_VERSION} rails"
+# end
+execute 'install rails 3' do
+  user 'root'
+  command '/opt/ruby-enterprise/bin/gem install rails --pre --no-rdoc --no-ri'
 end
 
 include_recipe 'passenger_enterprise::apache2'
