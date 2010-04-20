@@ -9,7 +9,7 @@ Vagrant::Config.run do |config|
   config.vm.box = "base"
   config.vm.base_mac = "0800279C2E41"
   config.vm.customize do |vm|
-    vm.memory_size = 640
+    vm.memory_size = 512
   end
   config.chef.json[:hagar_apps] = hagar_apps
   config.chef.json[:recipes] = ['vagrant_main']
