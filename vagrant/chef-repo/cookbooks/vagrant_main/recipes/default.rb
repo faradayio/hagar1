@@ -79,11 +79,6 @@ include_recipe "ruby_enterprise"
 
 include_recipe "mysql::server"
 
-execute "bounce mysql just to be safe" do
-  user 'root'
-  command '/etc/init.d/mysql restart'
-end
-
 package "sqlite3"
 package "libsqlite3-dev"
 
@@ -155,11 +150,6 @@ rails2_gems.each do |name, versions|
       end
     end
   end
-end
-
-execute "bounce mysql just to be safe for the second time" do
-  user 'root'
-  command '/etc/init.d/mysql restart'
 end
 
 # rails3 stuff
@@ -257,9 +247,4 @@ end
 execute "establish wlpf1 as the default virtualhost" do
   user 'root'
   command "/usr/bin/unlink /etc/apache2/sites-enabled/000-default; /usr/bin/unlink /etc/apache2/sites-enabled/wlpf1.conf; /usr/bin/unlink /etc/apache2/sites-enabled/000-wlpf1.conf; /bin/ln -s /etc/apache2/sites-available/wlpf1.conf /etc/apache2/sites-enabled/000-wlpf1.conf; true"
-end
-
-execute "bounce mysql just to be safe for the third time" do
-  user 'root'
-  command '/etc/init.d/mysql restart'
 end
