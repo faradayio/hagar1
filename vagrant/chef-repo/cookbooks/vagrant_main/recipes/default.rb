@@ -137,9 +137,9 @@ rails2_gems['rails'] = [::RAILS_2_VERSION]
 
 rails2_gems.each do |name, versions|
   versions.uniq.each do |x|
-    ree_gem name do
-      version x unless x == 'latest'
-      source "http://rubygems.org"
+    execute "install gem #{name} version #{x}" do
+      user 'root'
+      command "/opt/ruby-enterprise/bin/gem install #{name} --source=http://rubygems.org --source=http://gems.github.com#{" --version #{x}" unless x == 'latest'}"
       not_if "/opt/ruby-enterprise/bin/gem list --installed #{name}#{" --version #{x}" unless x == 'latest'}"
     end
     
