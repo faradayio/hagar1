@@ -118,9 +118,10 @@ rails2_gems = Hash.new
   proto_rails_root = File.join ::SHARED_FOLDER, name
   next if File.readable?(File.join(proto_rails_root, 'Gemfile'))
   IO.readlines(File.join(proto_rails_root, 'config', 'environment.rb')).grep(/config\.gem/).each do |line|
-    if /config\.gem ['"](.*?)['"],.*\:version => ['"](.*?)['"]/.match line
+    if /config\.gem ['"](.*?)['"],.*\:version => ['"][^0-9]{0,2}(.*?)['"]/.match line
       rails2_gems[$1] ||= Array.new
-      rails2_gems[$1] << $2
+      version = $2
+      rails2_gems[$1] << 
     elsif /config\.gem ['"](.*?)['"]/.match line
       rails2_gems[$1] ||= Array.new
       rails2_gems[$1] << 'latest'
