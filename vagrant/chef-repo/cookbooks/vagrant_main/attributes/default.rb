@@ -1,3 +1,4 @@
+set[:mysql][:sabshere_override_password] = 'password'
 set[:mysql][:server_root_password] = 'password'
 set[:mysql][:server_debian_password] = 'password'
 set[:mysql][:bind_address] = '0.0.0.0'

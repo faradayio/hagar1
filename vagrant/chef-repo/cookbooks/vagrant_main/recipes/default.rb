@@ -91,6 +91,7 @@ package "libsqlite3-dev"
   end
 end  
 
+package 'git-core' # for bundler when the source is git
 package 'libcurl4-openssl-dev' # for curb
 package 'libxml2-dev' # for libxml-ruby and nokogiri
 package 'libxslt1-dev' # for nokogiri
