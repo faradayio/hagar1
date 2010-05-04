@@ -47,8 +47,8 @@ package "libmysqlclient-dev"
 
 execute "ensure mysql password is set" do
   user 'root'
-  command "/usr/bin/mysql -u root -e \"UPDATE mysql.user SET password = PASSWORD('#{::MYSQL_PASSWORD}')\""
-  not_if "/usr/bin/mysql -u root -p#{::MYSQL_PASSWORD} -e \"SELECT 'testing 123'\""
+  command "/usr/bin/mysql -u root -e \"UPDATE mysql.user SET password = PASSWORD('#{::MYSQL_PASSWORD}'); FLUSH PRIVILEGES\""
+  not_if "/usr/bin/mysql -u root -p#{::MYSQL_PASSWORD} -e \"FLUSH PRIVILEGES\""
 end
 
 package "sqlite3"
@@ -72,9 +72,10 @@ package 'imagemagick' # for paperclip
 package 'libsasl2-dev' # for memcached
 package 'curl' # for data_miner and remote_table
 package 'unzip' # for remote_table
-package 'libsaxon-java' # for data1
+package 'libsaxonb-java' # for data1
 
-manually_updated_gems = Hash.new
+gem_versions = Hash.new
+gem_beneficiaries = Hash.new
 ::APPS.each do |name|
   proto_rails_root = File.join ::SHARED_FOLDER, name
   next if File.readable?(File.join(proto_rails_root, 'Gemfile'))
@@ -86,27 +87,29 @@ manually_updated_gems = Hash.new
       gem_name = $1
       gem_version = 'latest'
     end
-    manually_updated_gems[gem_name] ||= Array.new
-    manually_updated_gems[gem_name] << gem_version
+    gem_versions[gem_name] ||= Array.new
+    gem_versions[gem_name] << gem_version
+    gem_beneficiaries[gem_name] ||= Array.new
+    gem_beneficiaries[gem_name] << name
   end
 end
 
 #common gems
-manually_updated_gems['bundler'] = ['latest']
-manually_updated_gems['mysql'] = ['latest']
-manually_updated_gems['sqlite3-ruby'] = ['latest']
-manually_updated_gems['rails'] = [::RAILS_2_VERSION]
+gem_versions['bundler'] = ['latest']
+gem_versions['mysql'] = ['latest']
+gem_versions['sqlite3-ruby'] = ['latest']
+gem_versions['rails'] = [::RAILS_2_VERSION]
 
-manually_updated_gems.each do |name, versions|
+gem_versions.each do |name, versions|
   versions.uniq.each do |x|
-    execute "install gem #{name} version #{x}" do
+    execute "install gem #{name} version #{x} on behalf of #{gem_beneficiaries[name].to_a.join(',')}" do
       user 'root'
       command "gem install #{name} --source=http://rubygems.org --source=http://gems.github.com#{" --version #{x}" unless x == 'latest'}"
       not_if "gem list --installed #{name}#{" --version #{x}" unless x == 'latest'}"
     end
     
     if x == 'latest'
-      execute "trying to update #{name} because no version was specified" do
+      execute "checking latest version of #{name} on behalf of #{gem_beneficiaries[name].to_a.join(',')}" do
         user 'root'
         command "gem update #{name}"
       end
@@ -153,6 +156,11 @@ end
       command "mkdir -p #{File.join rails_root, unshared_path}"
     end
   end
+  
+  execute "create #{rails_root}" do
+    user 'vagrant'
+    command "mkdir -p #{rails_root}"
+  end
 
   execute "clear out old symlinks" do
     user 'vagrant'
@@ -188,7 +196,7 @@ end
   end
   
   if File.readable?(File.join(rails_root, 'Gemfile'))
-    execute 'run bundler install' do
+    execute "run bundler install for #{name}" do
       user 'vagrant'
       command 'bundle install'
       cwd rails_root
