@@ -17,15 +17,14 @@
 # limitations under the License.
 #
 
-require 'pp'
-
 ::APPS = node[:hagar_apps]
 ::PASSENGER_MAX_INSTANCES_PER_APP = 2
 ::RAILS_2_VERSION = '2.3.5'
+::RAILS_3_VERSION = '3.0.0.beta3'
 ::HOME = '/home/vagrant'
 ::SHARED_FOLDER = '/vagrant/apps_enabled'
-::PATH = '/opt/ruby-enterprise/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games'
 ::UNIVERSE = 'vagrant'
+::MYSQL_PASSWORD = 'password'
 
 # steal a trick from mysql::client... run the apt-get update immediately
 a = execute 'update apt-get' do
@@ -40,44 +39,17 @@ execute 'define /etc/universe' do
   command "/bin/echo \"#{::UNIVERSE}\" > /etc/universe"
 end
 
-execute "manually overwrite path" do
-  user 'root'
-  command "PATH=\"#{::PATH}\"; export PATH; /bin/echo \"PATH=$PATH\" > /etc/environment"
-end
-
-package 'curl'
-
-# start memcached
 package 'libevent-dev'
 require_recipe "memcached" # old memcached
-execute "manually upgrade memcached" do
-  user 'root'
-  command %{
-    cd;
-    rm -rf memcached-1.4.5;
-    rm -f memcached-1.4.5.tar.gz;
-    rm -f /usr/bin/memcached;
-    curl -O http://memcached.googlecode.com/files/memcached-1.4.5.tar.gz;
-    tar -xzf memcached-1.4.5.tar.gz;
-    cd memcached-1.4.5;
-    /home/vagrant/memcached-1.4.5/configure;
-    make;
-    make install clean;
-    ln -s /usr/local/bin/memcached /usr/bin/memcached;
-    cd;
-    rm -rf memcached-1.4.5;
-    rm -f memcached-1.4.5.tar.gz;
-  }
-end
-execute "bounce memcached" do
-  user 'root'
-  command '/etc/init.d/memcached restart'
-end
-# end memcached
 
-include_recipe "ruby_enterprise"
+package "mysql-server"
+package "libmysqlclient-dev"
 
-include_recipe "mysql::server"
+execute "ensure mysql password is set" do
+  user 'root'
+  command "/usr/bin/mysql -u root -e \"UPDATE mysql.user SET password = PASSWORD('#{::MYSQL_PASSWORD}')\""
+  not_if "/usr/bin/mysql -u root -p#{::MYSQL_PASSWORD} -e \"SELECT 'testing 123'\""
+end
 
 package "sqlite3"
 package "libsqlite3-dev"
@@ -86,7 +58,7 @@ package "libsqlite3-dev"
   %w{ test development production }.each do |flavor|
     execute "make sure we have a #{name} #{flavor} database" do
       user 'vagrant'
-      command "/usr/bin/mysql -u root -p#{node[:mysql][:server_root_password]} -e 'CREATE DATABASE IF NOT EXISTS #{name}_#{flavor}'"
+      command "/usr/bin/mysql -u root -p#{::MYSQL_PASSWORD} -e 'CREATE DATABASE IF NOT EXISTS #{name}_#{flavor}'"
     end
   end
 end  
@@ -100,109 +72,76 @@ package 'imagemagick' # for paperclip
 package 'libsasl2-dev' # for memcached
 package 'curl' # for data_miner and remote_table
 package 'unzip' # for remote_table
+package 'libsaxon-java' # for data1
 
-execute "update gem system" do
-  user 'root'
-  command '/opt/ruby-enterprise/bin/gem update --system'
-end
-
-execute 'make sure ruby enterprise gem is used' do
-  user 'root'
-  command %{
-    rm -f /usr/bin/gem;
-    ln -s /opt/ruby-enterprise/bin/gem /usr/bin/gem;
-  }
-end
-
-rails2_gems = Hash.new
+manually_updated_gems = Hash.new
 ::APPS.each do |name|
   proto_rails_root = File.join ::SHARED_FOLDER, name
   next if File.readable?(File.join(proto_rails_root, 'Gemfile'))
   IO.readlines(File.join(proto_rails_root, 'config', 'environment.rb')).grep(/config\.gem/).each do |line|
     if /config\.gem ['"](.*?)['"],.*\:version => ['"][^0-9]{0,2}(.*?)['"]/.match line
-      rails2_gems[$1] ||= Array.new
-      rails2_gems[$1] << $2
+      gem_name = $1
+      gem_version = $2
     elsif /config\.gem ['"](.*?)['"]/.match line
-      rails2_gems[$1] ||= Array.new
-      rails2_gems[$1] << 'latest'
-    else
-      raise "Can't read #{line}"
+      gem_name = $1
+      gem_version = 'latest'
     end
+    manually_updated_gems[gem_name] ||= Array.new
+    manually_updated_gems[gem_name] << gem_version
   end
 end
 
 #common gems
-rails2_gems['mysql'] = ['latest']
-rails2_gems['sqlite3-ruby'] = ['latest']
-rails2_gems['rails'] = [::RAILS_2_VERSION]
+manually_updated_gems['bundler'] = ['latest']
+manually_updated_gems['mysql'] = ['latest']
+manually_updated_gems['sqlite3-ruby'] = ['latest']
+manually_updated_gems['rails'] = [::RAILS_2_VERSION]
 
-rails2_gems.each do |name, versions|
+manually_updated_gems.each do |name, versions|
   versions.uniq.each do |x|
     execute "install gem #{name} version #{x}" do
       user 'root'
-      command "/opt/ruby-enterprise/bin/gem install #{name} --source=http://rubygems.org --source=http://gems.github.com#{" --version #{x}" unless x == 'latest'}"
-      not_if "/opt/ruby-enterprise/bin/gem list --installed #{name}#{" --version #{x}" unless x == 'latest'}"
+      command "gem install #{name} --source=http://rubygems.org --source=http://gems.github.com#{" --version #{x}" unless x == 'latest'}"
+      not_if "gem list --installed #{name}#{" --version #{x}" unless x == 'latest'}"
     end
     
     if x == 'latest'
-      execute "trying to update #{name}" do
+      execute "trying to update #{name} because no version was specified" do
         user 'root'
-        command "/opt/ruby-enterprise/bin/gem update #{name}"
+        command "gem update #{name}"
       end
     end
   end
 end
 
-# rails3 stuff
-# ::RAILS_3_VERSION = '3.0.0.beta3'
-# %w{mysql tzinfo builder i18n memcache-client rack rake rack-test erubis mail text-format thor bundler}.each do |name|
-#   ree_gem name do
-#     source "http://rubygems.org"
-#     not_if "/opt/ruby-enterprise/bin/gem list --installed #{name}"
-#   end
-# end
-# ree_gem 'rack-mount' do
-#   source 'http://rubygems.org'
-#   version '0.4.0'
-#   not_if '/opt/ruby-enterprise/bin/gem list --installed --version 0.4.0 rack-mount'
-# end
-# ree_gem 'railties' do
-#   source 'http://rubygems.org'
-#   version ::RAILS_3_VERSION
-#   not_if "/opt/ruby-enterprise/bin/gem list --installed --version #{::RAILS_3_VERSION} railties"
-# end
-# ree_gem 'rails' do
-#   source 'http://rubygems.org'
-#   version '3.0.0.beta2'
-#   not_if "/opt/ruby-enterprise/bin/gem list --installed --version #{::RAILS_3_VERSION} rails"
-# end
 execute 'install rails 3' do
   user 'root'
-  command '/opt/ruby-enterprise/bin/gem install rails --pre --no-rdoc --no-ri'
+  command 'gem install rails --pre --no-rdoc --no-ri'
+  not_if "gem list --installed rails --version #{::RAILS_3_VERSION}"
 end
 
-include_recipe 'passenger_enterprise::apache2'
+package "libapache2-mod-passenger"
 
-apache_site 'default', :disable => true
-
-# re-install passenger conf, this time with a smaller pool size
-template "#{node[:apache][:dir]}/mods-available/passenger.conf" do
+template "/etc/apache2/mods-available/passenger.conf" do
   cookbook "vagrant_main"
   source "passenger.conf.erb"
   owner "root"
   group "root"
-  mode 0755
+  mode 0644
   variables(
-    :passenger_root => node[:passenger_enterprise][:root_path],
-    :passenger_ruby => node[:ruby_enterprise][:ruby_bin],
-    :passenger_max_pool_size => ::APPS.length * ::PASSENGER_MAX_INSTANCES_PER_APP,
     :passenger_max_instances_per_app => ::PASSENGER_MAX_INSTANCES_PER_APP
   )
 end
 
-::UNSHARED_PATHS = %w{ tmp log }
+::UNSHARED_PATHS = []#%w{ tmp log }
 # note: currently ignoring dot-files
 ::IGNORED_PATHS = %w{ .bundle .git .vagrant vagrant Vagrantfile vagrant_main }
+
+execute "clear out old enabled sites" do
+  user 'root'
+  command "/usr/bin/find /etc/apache2/sites-enabled -maxdepth 1 -type l | /usr/bin/xargs -n 1 /usr/bin/unlink; /bin/true"
+  # note that I am ignoring errors with /bin/true
+end
 
 ::APPS.each do |name|
   proto_rails_root = File.join ::SHARED_FOLDER, name
@@ -228,18 +167,30 @@ end
     end
   end
 
-  web_app name do
-    docroot "#{rails_root}/public"
-    server_name "#{name}.vagrant.local"
-    rails_env 'development'
-    rack_env 'development'
-    cookbook 'vagrant_main'
+  template "/etc/apache2/sites-available/#{name}.conf" do
+    cookbook "vagrant_main"
+    source "web_app.conf.erb"
+    owner "root"
+    group "root"
+    mode 0644
+    variables(
+      :server_name => "#{name}.vagrant.local",
+      :docroot => "#{rails_root}/public",
+      :rack_env => 'development',
+      :rails_env => 'development'
+    )
+  end
+  
+  execute "enable site for #{name}" do
+    user 'root'
+    command "/bin/ln -s /etc/apache2/sites-available/#{name}.conf /etc/apache2/sites-enabled/#{name}.conf; /bin/true"
+    # ignoring fail
   end
   
   if File.readable?(File.join(rails_root, 'Gemfile'))
     execute 'run bundler install' do
       user 'vagrant'
-      command '/opt/ruby-enterprise/bin/bundle install'
+      command 'bundle install'
       cwd rails_root
     end
   end
@@ -248,4 +199,9 @@ end
 execute "establish wlpf1 as the default virtualhost" do
   user 'root'
   command "/usr/bin/unlink /etc/apache2/sites-enabled/000-default; /usr/bin/unlink /etc/apache2/sites-enabled/wlpf1.conf; /usr/bin/unlink /etc/apache2/sites-enabled/000-wlpf1.conf; /bin/ln -s /etc/apache2/sites-available/wlpf1.conf /etc/apache2/sites-enabled/000-wlpf1.conf; true"
+end
+
+execute "restart apache" do
+  user 'root'
+  command 'service apache2 restart'
 end
