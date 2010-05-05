@@ -5,8 +5,8 @@
 	# http://cakebaker.42dh.com/2010/01/17/rails-3-and-passenger/
   RackEnv <%= @rack_env %>
 	<Directory <%= @docroot %>>
-		Options MultiViews Indexes SymLinksIfOwnerMatch IncludesNoExec
 		AllowOverride All
+		Options Indexes SymLinksIfOwnerMatch IncludesNoExec
 		Order allow,deny
 		Allow from all
 	</Directory>

@@ -21,6 +21,7 @@
 ::PASSENGER_MAX_INSTANCES_PER_APP = 2
 ::RAILS_2_VERSION = '2.3.5'
 ::RAILS_3_VERSION = '3.0.0.beta3'
+::PASSENGER_VERSION = '2.2.11'
 ::HOME = '/home/vagrant'
 ::SHARED_FOLDER = '/vagrant/apps_enabled'
 ::UNIVERSE = 'vagrant'
@@ -73,6 +74,9 @@ package 'libsasl2-dev' # for memcached
 package 'curl' # for data_miner and remote_table
 package 'unzip' # for remote_table
 package 'libsaxonb-java' # for data1
+package 'apache2-prefork-dev' # for passenger
+package 'libapr1-dev' # for passenger
+package 'libaprutil1-dev' # for passenger
 
 gem_versions = Hash.new
 gem_beneficiaries = Hash.new
@@ -95,9 +99,10 @@ gem_beneficiaries = Hash.new
 end
 
 #common gems
-gem_versions['bundler'] = ['latest']
-gem_versions['mysql'] = ['latest']
-gem_versions['sqlite3-ruby'] = ['latest']
+gem_versions['passenger'] = [::PASSENGER_VERSION]
+gem_versions['bundler'] = ['0.9.24']
+gem_versions['mysql'] = ['2.8.1']
+gem_versions['sqlite3-ruby'] = ['1.2.5']
 gem_versions['rails'] = [::RAILS_2_VERSION]
 
 gem_versions.each do |name, versions|
@@ -123,7 +128,12 @@ execute 'install rails 3' do
   not_if "gem list --installed rails --version #{::RAILS_3_VERSION}"
 end
 
-package "libapache2-mod-passenger"
+execute 'install passenger module for apache2' do
+  user 'root'
+  cwd "/usr/lib/ruby/gems/1.8/gems/passenger-#{::PASSENGER_VERSION}"
+  command 'rake apache2'
+  not_if "[ -f /usr/lib/ruby/gems/1.8/gems/passenger-#{::PASSENGER_VERSION}/ext/apache2/mod_passenger.so ]"
+end
 
 template "/etc/apache2/mods-available/passenger.conf" do
   cookbook "vagrant_main"
@@ -132,8 +142,29 @@ template "/etc/apache2/mods-available/passenger.conf" do
   group "root"
   mode 0644
   variables(
-    :passenger_max_instances_per_app => ::PASSENGER_MAX_INSTANCES_PER_APP
+    :passenger_max_instances_per_app => ::PASSENGER_MAX_INSTANCES_PER_APP,
+    :passenger_version => ::PASSENGER_VERSION
   )
+end
+
+template "/etc/apache2/mods-available/passenger.load" do
+  cookbook "vagrant_main"
+  source "passenger.load.erb"
+  owner "root"
+  group "root"
+  mode 0644
+  variables :passenger_version => ::PASSENGER_VERSION
+end
+
+execute "enable passenger.load" do
+  user 'root'
+  command %{
+    unlink /etc/apache2/mods-enabled/passenger.load;
+    ln -s /etc/apache2/mods-available/passenger.load /etc/apache2/mods-enabled/passenger.load;
+    unlink /etc/apache2/mods-enabled/passenger.conf;
+    ln -s /etc/apache2/mods-available/passenger.conf /etc/apache2/mods-enabled/passenger.conf;
+    /bin/true
+  }
 end
 
 ::UNSHARED_PATHS = []#%w{ tmp log }
@@ -162,10 +193,16 @@ end
     command "mkdir -p #{rails_root}"
   end
 
-  execute "clear out old symlinks" do
+  execute "clear out old symlinks from #{rails_root}" do
     user 'vagrant'
     command "/usr/bin/find #{rails_root} -maxdepth 1 -type l | /usr/bin/xargs -n 1 /usr/bin/unlink; /bin/true"
     # note that I am ignoring errors with /bin/true
+  end
+  
+  execute "clear out any inadvertently created real dirs from #{rails_root}" do
+    user 'root'
+    command "rm -rf #{rails_root}/tmp #{rails_root}/log; /bin/true"
+    #ignoring failure
   end
 
   Dir[File.join(proto_rails_root, '*')].delete_if { |linkable_path| (::UNSHARED_PATHS + ::IGNORED_PATHS).include?(File.basename(linkable_path)) }.each do |linkable_path|
