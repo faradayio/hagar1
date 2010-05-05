@@ -74,6 +74,7 @@ package 'libsasl2-dev' # for memcached
 package 'curl' # for data_miner and remote_table
 package 'unzip' # for remote_table
 package 'libsaxonb-java' # for data1
+package 'apache2' # apparently this wasn't installed by default
 package 'apache2-prefork-dev' # for passenger
 package 'libapr1-dev' # for passenger
 package 'libaprutil1-dev' # for passenger
@@ -167,7 +168,6 @@ execute "enable passenger.load" do
   }
 end
 
-::UNSHARED_PATHS = []#%w{ tmp log }
 # note: currently ignoring dot-files
 ::IGNORED_PATHS = %w{ .bundle .git .vagrant vagrant Vagrantfile vagrant_main }
 
@@ -180,14 +180,7 @@ end
 ::APPS.each do |name|
   proto_rails_root = File.join ::SHARED_FOLDER, name
   rails_root = File.join ::HOME, name
-  
-  ::UNSHARED_PATHS.each do |unshared_path|
-    execute "create unshared #{unshared_path} on the virtualbox" do
-      user 'vagrant'
-      command "mkdir -p #{File.join rails_root, unshared_path}"
-    end
-  end
-  
+    
   execute "create #{rails_root}" do
     user 'vagrant'
     command "mkdir -p #{rails_root}"
@@ -205,7 +198,7 @@ end
     #ignoring failure
   end
 
-  Dir[File.join(proto_rails_root, '*')].delete_if { |linkable_path| (::UNSHARED_PATHS + ::IGNORED_PATHS).include?(File.basename(linkable_path)) }.each do |linkable_path|
+  Dir[File.join(proto_rails_root, '*')].delete_if { |linkable_path| (::IGNORED_PATHS).include?(File.basename(linkable_path)) }.each do |linkable_path|
     execute "symbolic link #{linkable_path} from read-only shared dir" do
       user 'vagrant'
       command "/bin/ln -s #{linkable_path} #{File.join(rails_root, linkable_path.sub(proto_rails_root, ''))}"
@@ -241,9 +234,11 @@ end
   end
 end
 
-execute "establish wlpf1 as the default virtualhost" do
-  user 'root'
-  command "/usr/bin/unlink /etc/apache2/sites-enabled/000-default; /usr/bin/unlink /etc/apache2/sites-enabled/wlpf1.conf; /usr/bin/unlink /etc/apache2/sites-enabled/000-wlpf1.conf; /bin/ln -s /etc/apache2/sites-available/wlpf1.conf /etc/apache2/sites-enabled/000-wlpf1.conf; true"
+if ::APPS.include? 'wlpf1'
+  execute "establish wlpf1 as the default virtualhost" do
+    user 'root'
+    command "/usr/bin/unlink /etc/apache2/sites-enabled/000-default; /usr/bin/unlink /etc/apache2/sites-enabled/wlpf1.conf; /usr/bin/unlink /etc/apache2/sites-enabled/000-wlpf1.conf; /bin/ln -s /etc/apache2/sites-available/wlpf1.conf /etc/apache2/sites-enabled/000-wlpf1.conf; true"
+  end
 end
 
 execute "restart apache" do
