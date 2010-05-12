@@ -107,6 +107,9 @@ gem_versions['mysql'] = ['2.8.1']
 gem_versions['sqlite3-ruby'] = ['1.2.5']
 gem_versions['rails'] = [::RAILS_2_VERSION]
 gem_versions['ruby-debug'] = ['0.10.3']
+gem_versions['jeweler'] = ['1.4.0']
+gem_versions['shoulda'] = ['2.10.3']
+gem_versions['mocha'] = ['0.9.8']
 
 gem_versions.each do |name, versions|
   versions.uniq.each do |x|
