@@ -1,8 +1,4 @@
 /.vagrant
 /vagrant_main
-/apps_enabled/data1
-/apps_enabled/wlpf1
-/apps_enabled/kayak1
-/apps_enabled/cm1
-/apps_enabled/app1
-/apps_enabled/zillow1
+/apps_enabled
+/gems_enabled

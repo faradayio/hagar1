@@ -18,12 +18,13 @@
 #
 
 ::APPS = node[:hagar_apps]
+::GEMS = node[:hagar_gems]
 ::PASSENGER_MAX_INSTANCES_PER_APP = 2
 ::RAILS_2_VERSION = '2.3.5'
 ::RAILS_3_VERSION = '3.0.0.beta3'
 ::PASSENGER_VERSION = '2.2.11'
 ::HOME = '/home/vagrant'
-::SHARED_FOLDER = '/vagrant/apps_enabled'
+::SHARED_FOLDER = '/vagrant'
 ::UNIVERSE = 'vagrant'
 ::MYSQL_PASSWORD = 'password'
 
@@ -82,7 +83,7 @@ package 'libaprutil1-dev' # for passenger
 gem_versions = Hash.new
 gem_beneficiaries = Hash.new
 ::APPS.each do |name|
-  proto_rails_root = File.join ::SHARED_FOLDER, name
+  proto_rails_root = File.join ::SHARED_FOLDER, 'apps_enabled', name
   next if File.readable?(File.join(proto_rails_root, 'Gemfile'))
   IO.readlines(File.join(proto_rails_root, 'config', 'environment.rb')).grep(/config\.gem/).each do |line|
     if /config\.gem ['"](.*?)['"],.*\:version => ['"][^0-9]{0,2}(.*?)['"]/.match line
@@ -178,8 +179,31 @@ execute "clear out old enabled sites" do
   # note that I am ignoring errors with /bin/true
 end
 
+::GEMS.each do |name|
+  proto_gem_root = File.join ::SHARED_FOLDER, 'gems_enabled', name
+  gem_root = File.join ::HOME, name
+  
+  execute "create #{gem_root}" do
+    user 'vagrant'
+    command "mkdir -p #{gem_root}"
+  end
+
+  execute "clear out old symlinks from #{gem_root}" do
+    user 'vagrant'
+    command "/usr/bin/find #{gem_root} -maxdepth 1 -type l | /usr/bin/xargs -n 1 /usr/bin/unlink; /bin/true"
+    # note that I am ignoring errors with /bin/true
+  end
+  
+  Dir[File.join(proto_gem_root, '*')].each do |linkable_path|
+    execute "symbolic link #{linkable_path} from read-only shared dir" do
+      user 'vagrant'
+      command "/bin/ln -s #{linkable_path} #{File.join(gem_root, linkable_path.sub(proto_gem_root, ''))}"
+    end
+  end
+end
+
 ::APPS.each do |name|
-  proto_rails_root = File.join ::SHARED_FOLDER, name
+  proto_rails_root = File.join ::SHARED_FOLDER, 'apps_enabled', name
   rails_root = File.join ::HOME, name
     
   execute "create #{rails_root}" do
