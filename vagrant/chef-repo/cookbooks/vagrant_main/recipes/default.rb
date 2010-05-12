@@ -102,7 +102,7 @@ end
 
 #common gems
 gem_versions['passenger'] = [::PASSENGER_VERSION]
-gem_versions['bundler'] = ['0.9.24']
+gem_versions['bundler'] = ['0.9.25']
 gem_versions['mysql'] = ['2.8.1']
 gem_versions['sqlite3-ruby'] = ['1.2.5']
 gem_versions['rails'] = [::RAILS_2_VERSION]
@@ -186,22 +186,15 @@ end
   proto_gem_root = File.join ::SHARED_FOLDER, 'gems_enabled', name
   gem_root = File.join ::HOME, name
   
-  execute "create #{gem_root}" do
+  execute "clear the way for #{gem_root}" do
     user 'vagrant'
-    command "mkdir -p #{gem_root}"
-  end
-
-  execute "clear out old symlinks from #{gem_root}" do
-    user 'vagrant'
-    command "/usr/bin/find #{gem_root} -maxdepth 1 -type l | /usr/bin/xargs -n 1 /usr/bin/unlink; /bin/true"
-    # note that I am ignoring errors with /bin/true
+    command "unlink #{gem_root}; rm -rf #{gem_root}; /bin/true"
+    # ignoring failure
   end
   
-  Dir[File.join(proto_gem_root, '*')].each do |linkable_path|
-    execute "symbolic link #{linkable_path} from read-only shared dir" do
-      user 'vagrant'
-      command "/bin/ln -s #{linkable_path} #{File.join(gem_root, linkable_path.sub(proto_gem_root, ''))}"
-    end
+  execute "symbolic link #{proto_gem_root} from read-only shared dir" do
+    user 'vagrant'
+    command "/bin/ln -s #{proto_gem_root} #{gem_root}"
   end
 end
 
@@ -272,4 +265,9 @@ end
 execute "restart apache" do
   user 'root'
   command 'service apache2 restart'
+end
+
+execute "make sure git autocrlf is set" do
+  user 'vagrant'
+  command 'git config --global core.autocrlf input'
 end
