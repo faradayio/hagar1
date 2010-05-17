@@ -41,6 +41,11 @@ execute 'define /etc/universe' do
   command "/bin/echo \"#{::UNIVERSE}\" > /etc/universe"
 end
 
+remote_file "/usr/bin/rep.rb" do
+  source "rep.rb"
+  mode '755'
+end
+
 package 'libevent-dev'
 require_recipe "memcached" # old memcached
 
@@ -275,4 +280,9 @@ end
 execute "make sure git autocrlf is set" do
   user 'vagrant'
   command 'git config --global core.autocrlf input'
+end
+
+execute 'make sure mysqld uses innodb' do
+  user 'root'
+  command '/usr/bin/rep.rb /etc/mysql/my.cnf default-storage-engine=INNODB "make sure mysqld uses innodb" "[mysqld]"'
 end
