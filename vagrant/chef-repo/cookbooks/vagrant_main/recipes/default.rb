@@ -254,7 +254,8 @@ end
   if File.readable?(File.join(rails_root, 'Gemfile'))
     execute "make sure user can write to bundle for #{name}" do
       user 'root'
-      command "chown -R vagrant /home/vagrant/.bundle; chown -R vagrant #{rails_root}/.bundle;"
+      command "chown -R vagrant /home/vagrant/.bundle; chown -R vagrant #{rails_root}/.bundle; /bin/true"
+      # ignoring fail
     end
     
     execute "run bundler install for #{name}" do
