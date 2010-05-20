@@ -273,11 +273,6 @@ if ::APPS.include? 'wlpf1'
   end
 end
 
-execute "restart apache" do
-  user 'root'
-  command 'service apache2 restart'
-end
-
 execute "make sure git autocrlf is set" do
   user 'vagrant'
   command 'git config --global core.autocrlf input'
@@ -286,4 +281,14 @@ end
 execute 'make sure mysqld uses innodb' do
   user 'root'
   command '/usr/bin/rep.rb /etc/mysql/my.cnf default-storage-engine=INNODB "make sure mysqld uses innodb" "[mysqld]"'
+end
+
+execute 'make sure sendfile is off' do
+  user 'root'
+  command '/usr/bin/rep.rb /etc/apache2/apache2.conf "EnableSendfile Off" "make sure sendfile is off" "HostnameLookups Off"'
+end
+
+execute "restart apache" do
+  user 'root'
+  command 'service apache2 restart'
 end
