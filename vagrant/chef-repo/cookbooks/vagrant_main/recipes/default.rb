@@ -115,6 +115,7 @@ gem_versions['ruby-debug'] = ['0.10.3']
 gem_versions['jeweler'] = ['1.4.0']
 gem_versions['shoulda'] = ['2.10.3']
 gem_versions['mocha'] = ['0.9.8']
+gem_versions['taps'] = ['0.3.5']
 
 gem_versions.each do |name, versions|
   versions.uniq.each do |x|
