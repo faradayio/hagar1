@@ -111,8 +111,12 @@ gem_beneficiaries = Hash.new
 end
 
 #common gems
+execute 'install bundler' do
+  user 'root'
+  command 'gem install bundler --pre --no-rdoc --no-ri'
+end
+
 gem_versions['passenger'] = [::PASSENGER_VERSION]
-gem_versions['bundler'] = ['>=0.9.26']
 gem_versions['mysql'] = ['2.8.1']
 gem_versions['sqlite3-ruby'] = ['1.2.5']
 gem_versions['rails'] = [::RAILS_2_VERSION]
