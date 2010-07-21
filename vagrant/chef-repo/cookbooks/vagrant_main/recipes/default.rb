@@ -46,6 +46,11 @@ remote_file "/usr/bin/rep.rb" do
   mode '755'
 end
 
+remote_file "/usr/bin/hostsync" do
+  source "hostsync"
+  mode '755'
+end
+
 package 'libevent-dev'
 require_recipe "memcached" # old memcached
 

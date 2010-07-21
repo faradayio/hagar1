@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+
+require 'fileutils'
+
+VOLATILE_ROOT = '/home/vagrant'
+SAFE_ROOT = '/vagrant/apps_enabled'
+
+ARGV.each do |arg|
+  target = File.expand_path arg, Dir.pwd
+
+  if target.start_with? VOLATILE_ROOT
+    volatile = target
+    safe = target.sub VOLATILE_ROOT, SAFE_ROOT
+  elsif target.start_with? SAFE_ROOT
+    safe = target
+    volatile = target.sub SAFE_ROOT, VOLATILE_ROOT
+  else
+    puts "NOOP #{target} is not covered by hostsync"
+    next
+  end
+
+  if fallacy = %w{ /tmp /log .bundle .git .vagrant }.detect { |prohibited| target.include? prohibited }
+    puts "NOOP #{target} is prohibited because it includes '#{fallacy}'!"
+    next
+  end
+
+  if File.symlink? volatile
+    puts "NOOP nothing to be done with #{volatile}, it's already a symlink"
+    next
+  end
+
+  if File.file? volatile or File.directory? volatile
+    # save it to the host!
+    source = volatile
+    dest = safe
+    action = :save_to_host
+  elsif File.file? safe or File.directory? safe
+    # link it to the root of the guest!
+    source = safe
+    dest = volatile
+    action = :link_to_guest
+  else
+    puts "NOOP #{target} doesn't refer to anything"
+    next
+  end
+
+  if File.identical? source, dest
+    puts "NOOP #{source} and #{dest} are identical!"
+    next
+  end
+
+  if File.file? dest or File.directory? dest
+    puts "NOOP #{dest} already exists!"
+    next
+  end
+
+  def save_to_host(source, dest)
+    FileUtils.cp source, dest
+    FileUtils.rm source
+    FileUtils.ln_s dest, source
+    puts "SAVED TO HOST #{source}"
+  end
+
+  def link_to_guest(source, dest)
+    FileUtils.ln_s source, dest
+    puts "SYMLINKED TO GUEST #{source}"
+  end
+
+  send action, source, dest
+end
