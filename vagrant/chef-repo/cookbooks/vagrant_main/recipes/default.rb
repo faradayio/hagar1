@@ -20,8 +20,8 @@
 ::APPS = node[:hagar_apps]
 ::GEMS = node[:hagar_gems]
 ::PASSENGER_MAX_INSTANCES_PER_APP = 2
-::RAILS_2_VERSION = '2.3.5'
-::RAILS_3_VERSION = '3.0.0.beta3'
+::RAILS_2_VERSION = '2.3.8'
+::RAILS_3_VERSION = '3.0.0.beta4'
 ::PASSENGER_VERSION = '2.2.11'
 ::HOME = '/home/vagrant'
 ::SHARED_FOLDER = '/vagrant'
@@ -112,7 +112,7 @@ end
 
 #common gems
 gem_versions['passenger'] = [::PASSENGER_VERSION]
-gem_versions['bundler'] = ['0.9.25']
+gem_versions['bundler'] = ['>=0.9.26']
 gem_versions['mysql'] = ['2.8.1']
 gem_versions['sqlite3-ruby'] = ['1.2.5']
 gem_versions['rails'] = [::RAILS_2_VERSION]
@@ -120,7 +120,7 @@ gem_versions['ruby-debug'] = ['0.10.3']
 gem_versions['jeweler'] = ['1.4.0']
 gem_versions['shoulda'] = ['2.10.3']
 gem_versions['mocha'] = ['0.9.8']
-gem_versions['taps'] = ['0.3.5']
+gem_versions['taps'] = ['>=0.3.5']
 
 gem_versions.each do |name, versions|
   versions.uniq.each do |x|
