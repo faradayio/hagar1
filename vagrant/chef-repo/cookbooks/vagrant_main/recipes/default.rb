@@ -237,7 +237,8 @@ end
   Dir[File.join(proto_rails_root, '*')].delete_if { |linkable_path| (::IGNORED_PATHS).include?(File.basename(linkable_path)) }.each do |linkable_path|
     execute "symbolic link #{linkable_path} from read-only shared dir" do
       user 'vagrant'
-      command "/bin/ln -s #{linkable_path} #{File.join(rails_root, linkable_path.sub(proto_rails_root, ''))}"
+      command "/usr/bin/hostsync #{linkable_path}"
+      # command "/bin/ln -s #{linkable_path} #{File.join(rails_root, linkable_path.sub(proto_rails_root, ''))}"
     end
   end
 
