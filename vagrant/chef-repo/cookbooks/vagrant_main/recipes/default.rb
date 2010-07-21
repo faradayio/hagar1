@@ -126,8 +126,8 @@ gem_versions.each do |name, versions|
   versions.uniq.each do |x|
     execute "install gem #{name} version #{x} on behalf of #{gem_beneficiaries[name].to_a.join(',')}" do
       user 'root'
-      command "gem install #{name} --source=http://rubygems.org --source=http://gems.github.com#{" --version #{x}" unless x == 'latest'}"
-      not_if "gem list --installed #{name}#{" --version #{x}" unless x == 'latest'}"
+      command "gem install #{name} --source=http://rubygems.org --source=http://gems.github.com#{" --version \"#{x}\"" unless x == 'latest'}"
+      not_if "gem list --installed #{name}#{" --version \"#{x}\"" unless x == 'latest'}"
     end
     
     if x == 'latest'
