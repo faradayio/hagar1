@@ -50,7 +50,7 @@ ARGV.each do |arg|
   end
 
   if File.file? dest or File.directory? dest
-    puts "NOOP #{dest} already exists!"
+    puts "NOOP #{dest} already exists! Delete the other file if it's in your way."
     next
   end
 
