@@ -28,6 +28,8 @@ extra_packages = case node[:platform]
       ruby1.8-dev
       rdoc1.8
       ri1.8
+      irb1.8
+      libshadow-ruby1.8
       libopenssl-ruby
     }
   when "centos","redhat","fedora"
@@ -40,10 +42,14 @@ extra_packages = case node[:platform]
       ruby-rdoc
       ruby-mode
     }
+  when "arch"
+    %w{ ruby-docs }
   end
 
-extra_packages.each do |pkg|
-  package pkg do
-    action :install
+unless extra_packages.nil?
+  extra_packages.each do |pkg|
+    package pkg do
+      action :install
+    end
   end
 end

@@ -1,35 +1,36 @@
 {
+    "recommendations": {
+    },
+    "attributes": {
+    },
+    "maintainer": "Opscode, Inc.",
+    "suggestions": {
+    },
     "dependencies": {
     },
-    "replacing": {
-    },
-    "description": "Instsalls and configures varnish",
-    "groupings": {
+    "maintainer_email": "cookbooks@opscode.com",
+    "conflicting": {
     },
     "platforms": {
-      "ubuntu": [
+      "debian": [
 
       ],
-      "debian": [
+      "ubuntu": [
 
       ]
     },
-    "version": "0.7.0",
-    "recommendations": {
+    "license": "Apache 2.0",
+    "version": "0.8.0",
+    "providing": {
+    },
+    "recipes": {
+      "varnish": "Installs and configures varnish"
+    },
+    "replacing": {
     },
     "name": "varnish",
-    "maintainer": "Opscode, Inc.",
-    "long_description": "",
-    "recipes": {
+    "description": "Instsalls and configures varnish",
+    "groupings": {
     },
-    "suggestions": {
-    },
-    "maintainer_email": "cookbooks@opscode.com",
-    "attributes": {
-    },
-    "conflicting": {
-    },
-    "license": "Apache 2.0",
-    "providing": {
-    }
+    "long_description": ""
   }

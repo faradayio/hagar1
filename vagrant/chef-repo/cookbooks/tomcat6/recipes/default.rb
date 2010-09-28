@@ -21,6 +21,7 @@
 
 service "tomcat6" do
   action :nothing
+  supports :status => true, :start => true, :stop => true, :restart => true
 end
 
 group node[:tomcat6][:user] do
@@ -33,9 +34,10 @@ user node[:tomcat6][:user] do
   shell "/bin/sh"
 end
 
-[node[:tomcat6][:temp],node[:tomcat6][:logs],node[:tomcat6][:webapps],node[:tomcat6][:home],node[:tomcat6][:conf]].each do |dir|
+[node[:tomcat6][:temp],node[:tomcat6][:logs],node[:tomcat6][:webapp_base_dir],node[:tomcat6][:webapps],node[:tomcat6][:home],node[:tomcat6][:conf]].each do |dir|
   directory dir do
     action :create
+    recursive true
     mode 0755
     owner "#{node[:tomcat6][:user]}"
     group "#{node[:tomcat6][:user]}"
@@ -114,7 +116,7 @@ when "centos"
 
   #  package "tomcat6-admin-webapps"
 
-  r = remote_file "/tmp/JVM-MANAGEMENT-MIB.mib" do
+  r = cookbook_file "/tmp/JVM-MANAGEMENT-MIB.mib" do
     source "JVM-MANAGEMENT-MIB.mib"
     mode 0755
     owner "root"
@@ -135,6 +137,7 @@ when "centos"
 
   g.run_action(:install)
 
+  require 'rubygems'
   Gem.clear_paths
 
   require "snmp"
@@ -143,7 +146,7 @@ when "centos"
 
   package "tomcat-native" do
     action :install
-    only_if do @node[:tomcat6][:with_native] end
+    only_if do node[:tomcat6][:with_native] end
   end
 
 
@@ -151,21 +154,21 @@ else
 
 end
 
-remote_file "/etc/init.d/tomcat6" do
+cookbook_file "/etc/init.d/tomcat6" do
   source "tomcat6"
   mode 0755
   owner "root"
   group "root"
 end
 
-remote_file "/usr/bin/dtomcat6" do
+cookbook_file "/usr/bin/dtomcat6" do
   source "dtomcat6"
   mode 0755
   owner "root"
   group "root"
 end
 
-remote_file File.join(node[:tomcat6][:dir],"logging.properties") do
+cookbook_file File.join(node[:tomcat6][:dir],"logging.properties") do
   source "logging.properties"
   mode 0644
   owner "root"
@@ -188,7 +191,14 @@ template "#{node[:tomcat6][:dir]}/tomcat6.conf" do
   group "#{node[:tomcat6][:user]}"
   owner "#{node[:tomcat6][:user]}"
   mode 0644
-  notifies :stop, resources(:service => "god"), :immediately
+  notifies :restart, resources(:service => "tomcat6"), :immediately
+end
+
+template "#{node[:tomcat6][:dir]}/tomcat-users.xml" do
+  source "tomcat-users.xml.erb"
+  group "#{node[:tomcat6][:user]}"
+  owner "#{node[:tomcat6][:user]}"
+  mode 0600
   notifies :restart, resources(:service => "tomcat6"), :immediately
 end
 

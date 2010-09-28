@@ -24,6 +24,9 @@ root_group = value_for_platform(
 )
 
 node[:apache][:listen_ports] << "443" unless node[:apache][:listen_ports].include?("443")
+if node[:chef][:webui_enabled]
+  node[:apache][:listen_ports] << "444" unless node[:apache][:listen_ports].include?("444")
+end
 
 include_recipe "chef::server"
 include_recipe "apache2"

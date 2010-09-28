@@ -1,44 +1,45 @@
 {
+    "recommendations": {
+    },
+    "attributes": {
+    },
+    "maintainer": "Opscode, Inc.",
+    "suggestions": {
+      "openldap": [
+
+      ]
+    },
     "dependencies": {
     },
-    "replacing": {
-    },
-    "description": "Installs and configures nscd",
-    "groupings": {
+    "maintainer_email": "cookbooks@opscode.com",
+    "conflicting": {
     },
     "platforms": {
-      "ubuntu": [
+      "debian": [
 
       ],
       "centos": [
 
       ],
-      "debian": [
+      "ubuntu": [
 
       ],
       "redhat": [
 
       ]
     },
+    "license": "Apache 2.0",
     "version": "0.7.0",
-    "recommendations": {
+    "providing": {
+    },
+    "recipes": {
+      "nscd": "Installs and configures nscd"
+    },
+    "replacing": {
     },
     "name": "nscd",
-    "maintainer": "Opscode, Inc.",
-    "long_description": "",
-    "recipes": {
+    "description": "Installs and configures nscd",
+    "groupings": {
     },
-    "suggestions": {
-      "openldap": [
-
-      ]
-    },
-    "maintainer_email": "cookbooks@opscode.com",
-    "attributes": {
-    },
-    "conflicting": {
-    },
-    "license": "Apache 2.0",
-    "providing": {
-    }
+    "long_description": ""
   }

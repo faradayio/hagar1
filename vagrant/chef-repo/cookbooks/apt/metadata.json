@@ -1,37 +1,38 @@
 {
+    "recommendations": {
+    },
+    "attributes": {
+    },
+    "maintainer": "Opscode, Inc.",
+    "suggestions": {
+    },
     "dependencies": {
     },
-    "replacing": {
-    },
-    "description": "Configures apt and apt services",
-    "groupings": {
+    "maintainer_email": "cookbooks@opscode.com",
+    "conflicting": {
     },
     "platforms": {
-      "ubuntu": [
+      "debian": [
 
       ],
-      "debian": [
+      "ubuntu": [
 
       ]
     },
-    "version": "0.8.0",
-    "recommendations": {
+    "license": "Apache 2.0",
+    "version": "0.9.1",
+    "providing": {
     },
-    "name": "apt",
-    "maintainer": "Opscode, Inc.",
-    "long_description": "",
     "recipes": {
       "apt::proxy": "Set up an APT proxy",
+      "apt": "Runs apt-get update during compile phase and sets up preseed directories",
       "apt::cacher": "Set up an APT cache"
     },
-    "suggestions": {
+    "replacing": {
     },
-    "maintainer_email": "cookbooks@opscode.com",
-    "attributes": {
+    "name": "apt",
+    "description": "Configures apt and apt services",
+    "groupings": {
     },
-    "conflicting": {
-    },
-    "license": "Apache 2.0",
-    "providing": {
-    }
+    "long_description": ""
   }

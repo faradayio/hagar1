@@ -17,12 +17,6 @@
 # limitations under the License.
 #
 
-# sabshere - these are really old
-# i manually installed memcached to /usr/local/bin
-# then i modified
-# * /usr/share/memcached/scripts/start-memcached
-# * /etc/init.d/memcached
-# i leave the package installed because it sets up the service
 package "memcached" do
   action :upgrade
 end
@@ -31,9 +25,9 @@ package "libmemcache-dev" do
   action :upgrade
 end
 
-
 service "memcached" do
   action :nothing
+  supports :status => true, :start => true, :stop => true, :restart => true
 end
 
 template "/etc/memcached.conf" do
@@ -42,7 +36,7 @@ template "/etc/memcached.conf" do
   group "root"
   mode "0644"
   variables(
-    :ipaddress => '127.0.0.1', # sabshere
+    :ipaddress => node[:ipaddress],
     :user => node[:memcached][:user],
     :port => node[:memcached][:port],
     :memory => node[:memcached][:memory]

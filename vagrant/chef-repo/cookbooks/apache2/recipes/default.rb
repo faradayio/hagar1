@@ -38,6 +38,8 @@ service "apache2" do
     reload_command "/sbin/service httpd reload && sleep 1"
   when "debian","ubuntu"
     service_name "apache2"
+    restart_command "/usr/sbin/invoke-rc.d apache2 restart && sleep 1"
+    reload_command "/usr/sbin/invoke-rc.d apache2 reload && sleep 1"
   end
   supports value_for_platform(
     "debian" => { "4.0" => [ :restart, :reload ], "default" => [ :restart, :reload, :status ] },
@@ -56,7 +58,7 @@ if platform?("centos", "redhat", "fedora", "suse")
     action :create
   end
   
-  remote_file "/usr/local/bin/apache2_module_conf_generate.pl" do
+  cookbook_file "/usr/local/bin/apache2_module_conf_generate.pl" do
     source "apache2_module_conf_generate.pl"
     mode 0755
     owner "root"

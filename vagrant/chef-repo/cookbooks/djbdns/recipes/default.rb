@@ -59,7 +59,7 @@ else
 end
 
 user "dnscache" do
-  uid 9997
+  uid node[:djbdns][:dnscache_uid]
   case node[:platform]
   when "ubuntu","debian"
     gid "nogroup"
@@ -70,10 +70,11 @@ user "dnscache" do
   end
   shell "/bin/false"
   home "/home/dnscache"
+  system true
 end
 
 user "dnslog" do
-  uid 9998
+  uid node[:djbdns][:dnslog_uid]
   case node[:platform]
   when "ubuntu","debian"
     gid "nogroup"
@@ -84,10 +85,11 @@ user "dnslog" do
   end
   shell "/bin/false"
   home "/home/dnslog"
+  system true
 end
 
 user "tinydns" do
-  uid 9999
+  uid node[:djbdns][:tinydns_uid]
   case node[:platform]
   when "ubuntu","debian"
     gid "nogroup"
@@ -98,4 +100,5 @@ user "tinydns" do
   end
   shell "/bin/false"
   home "/home/tinydns"
+  system true
 end

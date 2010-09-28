@@ -17,7 +17,10 @@
 # limitations under the License.
 #
 
+include_recipe "cron"
 include_recipe "rsyslog"
+
+node.set[:rsyslog][:server] = true
 
 directory node[:rsyslog][:log_dir] do
   owner "root"

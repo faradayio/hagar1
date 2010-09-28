@@ -1,14 +1,13 @@
 hagar_root = File.expand_path File.join(File.dirname(__FILE__))
-hagar_apps = Dir[File.join(hagar_root, 'apps_enabled', '*')].map { |name| File.basename(name) }
-hagar_gems = Dir[File.join(hagar_root, 'gems_enabled', '*')].map { |name| File.basename(name) }
 
 Vagrant::Config.run do |config|
-  config.vm.box = "lucid32"
+  config.vm.box = "base"
   config.vm.customize do |vm|
     vm.memory_size = 512
   end
-  config.chef.json[:hagar_apps] = hagar_apps
-  config.chef.json[:hagar_gems] = hagar_gems
+  config.chef.json[:network] = (ENV['NETWORK'] != 'false')
+  config.chef.json[:hagar_apps] = Dir[File.join(hagar_root, 'apps_enabled', '*')].map { |name| File.basename(name) }
+  config.chef.json[:hagar_gems] = Dir[File.join(hagar_root, 'gems_enabled', '*')].map { |name| File.basename(name) }
   config.chef.json[:recipes] = ['vagrant_main']
   config.vm.provisioner = :chef_solo
   config.chef.cookbooks_path = "vagrant/chef-repo/cookbooks"
