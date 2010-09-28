@@ -21,7 +21,7 @@
 ::GEMS = node[:hagar_gems]
 ::PASSENGER_MAX_INSTANCES_PER_APP = 2
 ::RAILS_2_VERSION = '2.3.8'
-::RAILS_3_VERSION = '3.0.0.beta4'
+::RAILS_3_VERSION = '3.0.0.rc2'
 ::PASSENGER_VERSION = '2.2.11'
 ::HOME = '/home/vagrant'
 ::SHARED_FOLDER = '/vagrant'
@@ -29,133 +29,133 @@
 ::MYSQL_PASSWORD = 'password'
 
 # steal a trick from mysql::client... run the apt-get update immediately
-a = execute 'update apt-get' do
-  user 'root'
-  command '/usr/bin/apt-get update'
-  action :nothing
-end
-a.run_action :run
-
-execute 'define /etc/universe' do
-  user 'root'
-  command "/bin/echo \"#{::UNIVERSE}\" > /etc/universe"
-end
-
-remote_file "/usr/bin/rep.rb" do
-  source "rep.rb"
-  mode '755'
-end
-
-remote_file "/usr/bin/hostsync" do
-  source "hostsync"
-  mode '755'
-end
-
-package 'libevent-dev'
-require_recipe "memcached" # old memcached
-
-package "mysql-server"
-package "libmysqlclient-dev"
-
-execute "ensure mysql password is set" do
-  user 'root'
-  command "/usr/bin/mysql -u root -e \"UPDATE mysql.user SET password = PASSWORD('#{::MYSQL_PASSWORD}'); FLUSH PRIVILEGES\""
-  not_if "/usr/bin/mysql -u root -p#{::MYSQL_PASSWORD} -e \"FLUSH PRIVILEGES\""
-end
-
-package "sqlite3"
-package "libsqlite3-dev"
-
-::APPS.each do |name|
-  %w{ test development production }.each do |flavor|
-    execute "make sure we have a #{name} #{flavor} database" do
-      user 'vagrant'
-      command "/usr/bin/mysql -u root -p#{::MYSQL_PASSWORD} -e 'CREATE DATABASE IF NOT EXISTS #{name}_#{flavor}'"
-    end
-  end
-end  
-
-package 'git-core' # for bundler when the source is git
-package 'libcurl4-openssl-dev' # for curb
-package 'libxml2-dev' # for libxml-ruby and nokogiri
-package 'libxslt1-dev' # for nokogiri
-package 'libonig-dev' # for onigurama
-package 'imagemagick' # for paperclip
-package 'libsasl2-dev' # for memcached
-package 'curl' # for data_miner and remote_table
-package 'unzip' # for remote_table
-package 'libsaxonb-java' # for data1
-package 'apache2' # apparently this wasn't installed by default
-package 'apache2-prefork-dev' # for passenger
-package 'libapr1-dev' # for passenger
-package 'libaprutil1-dev' # for passenger
-
-gem_versions = Hash.new
-gem_beneficiaries = Hash.new
-::APPS.each do |name|
-  proto_rails_root = File.join ::SHARED_FOLDER, 'apps_enabled', name
-  next if File.readable?(File.join(proto_rails_root, 'Gemfile'))
-  IO.readlines(File.join(proto_rails_root, 'config', 'environment.rb')).grep(/config\.gem/).each do |line|
-    if /config\.gem ['"](.*?)['"],.*\:version => ['"][^0-9]{0,2}(.*?)['"]/.match line
-      gem_name = $1
-      gem_version = $2
-    elsif /config\.gem ['"](.*?)['"]/.match line
-      gem_name = $1
-      gem_version = 'latest'
-    end
-    gem_versions[gem_name] ||= Array.new
-    gem_versions[gem_name] << gem_version
-    gem_beneficiaries[gem_name] ||= Array.new
-    gem_beneficiaries[gem_name] << name
-  end
-end
-
-#common gems
-execute 'install bundler' do
-  user 'root'
-  command 'gem install bundler --pre --no-rdoc --no-ri'
-end
-
-gem_versions['passenger'] = [::PASSENGER_VERSION]
-gem_versions['mysql'] = ['2.8.1']
-gem_versions['sqlite3-ruby'] = ['1.2.5']
-gem_versions['rails'] = [::RAILS_2_VERSION]
-gem_versions['rails'] = ['2.3.5']
-gem_versions['ruby-debug'] = ['0.10.3']
-gem_versions['jeweler'] = ['1.4.0']
-gem_versions['shoulda'] = ['2.10.3']
-gem_versions['mocha'] = ['0.9.8']
-gem_versions['taps'] = ['>=0.3.5']
-
-gem_versions.each do |name, versions|
-  versions.uniq.each do |x|
-    execute "install gem #{name} version #{x} on behalf of #{gem_beneficiaries[name].to_a.join(',')}" do
-      user 'root'
-      command "gem install #{name} --source=http://rubygems.org --source=http://gems.github.com#{" --version \"#{x}\"" unless x == 'latest'}"
-      not_if "gem list --installed #{name}#{" --version \"#{x}\"" unless x == 'latest'}"
-    end
-    
-    if x == 'latest'
-      execute "checking latest version of #{name} on behalf of #{gem_beneficiaries[name].to_a.join(',')}" do
-        user 'root'
-        command "gem update #{name}"
-      end
-    end
-  end
-end
-
-execute 'install rails 3' do
-  user 'root'
-  command 'gem install rails --pre --no-rdoc --no-ri'
-  not_if "gem list --installed rails --version #{::RAILS_3_VERSION}"
-end
-
-execute 'install passenger module for apache2' do
-  user 'root'
-  cwd "/usr/lib/ruby/gems/1.8/gems/passenger-#{::PASSENGER_VERSION}"
-  command 'rake apache2'
-  not_if "[ -f /usr/lib/ruby/gems/1.8/gems/passenger-#{::PASSENGER_VERSION}/ext/apache2/mod_passenger.so ]"
-end
+# a = execute 'update apt-get' do
+#   user 'root'
+#   command '/usr/bin/apt-get update'
+#   action :nothing
+# end
+# a.run_action :run
+# 
+# execute 'define /etc/universe' do
+#   user 'root'
+#   command "/bin/echo \"#{::UNIVERSE}\" > /etc/universe"
+# end
+# 
+# remote_file "/usr/bin/rep.rb" do
+#   source "rep.rb"
+#   mode '755'
+# end
+# 
+# remote_file "/usr/bin/hostsync" do
+#   source "hostsync"
+#   mode '755'
+# end
+# 
+# package 'libevent-dev'
+# require_recipe "memcached" # old memcached
+# 
+# package "mysql-server"
+# package "libmysqlclient-dev"
+# 
+# execute "ensure mysql password is set" do
+#   user 'root'
+#   command "/usr/bin/mysql -u root -e \"UPDATE mysql.user SET password = PASSWORD('#{::MYSQL_PASSWORD}'); FLUSH PRIVILEGES\""
+#   not_if "/usr/bin/mysql -u root -p#{::MYSQL_PASSWORD} -e \"FLUSH PRIVILEGES\""
+# end
+# 
+# package "sqlite3"
+# package "libsqlite3-dev"
+# 
+# ::APPS.each do |name|
+#   %w{ test development production }.each do |flavor|
+#     execute "make sure we have a #{name} #{flavor} database" do
+#       user 'vagrant'
+#       command "/usr/bin/mysql -u root -p#{::MYSQL_PASSWORD} -e 'CREATE DATABASE IF NOT EXISTS #{name}_#{flavor}'"
+#     end
+#   end
+# end  
+# 
+# package 'git-core' # for bundler when the source is git
+# package 'libcurl4-openssl-dev' # for curb
+# package 'libxml2-dev' # for libxml-ruby and nokogiri
+# package 'libxslt1-dev' # for nokogiri
+# package 'libonig-dev' # for onigurama
+# package 'imagemagick' # for paperclip
+# package 'libsasl2-dev' # for memcached
+# package 'curl' # for data_miner and remote_table
+# package 'unzip' # for remote_table
+# package 'libsaxonb-java' # for data1
+# package 'apache2' # apparently this wasn't installed by default
+# package 'apache2-prefork-dev' # for passenger
+# package 'libapr1-dev' # for passenger
+# package 'libaprutil1-dev' # for passenger
+# 
+# gem_versions = Hash.new
+# gem_beneficiaries = Hash.new
+# ::APPS.each do |name|
+#   proto_rails_root = File.join ::SHARED_FOLDER, 'apps_enabled', name
+#   next if File.readable?(File.join(proto_rails_root, 'Gemfile'))
+#   IO.readlines(File.join(proto_rails_root, 'config', 'environment.rb')).grep(/config\.gem/).each do |line|
+#     if /config\.gem ['"](.*?)['"],.*\:version => ['"][^0-9]{0,2}(.*?)['"]/.match line
+#       gem_name = $1
+#       gem_version = $2
+#     elsif /config\.gem ['"](.*?)['"]/.match line
+#       gem_name = $1
+#       gem_version = 'latest'
+#     end
+#     gem_versions[gem_name] ||= Array.new
+#     gem_versions[gem_name] << gem_version
+#     gem_beneficiaries[gem_name] ||= Array.new
+#     gem_beneficiaries[gem_name] << name
+#   end
+# end
+# 
+# #common gems
+# execute 'install bundler' do
+#   user 'root'
+#   command 'gem install bundler --pre --no-rdoc --no-ri'
+# end
+# 
+# gem_versions['passenger'] = [::PASSENGER_VERSION]
+# gem_versions['mysql'] = ['2.8.1']
+# gem_versions['sqlite3-ruby'] = ['1.2.5']
+# gem_versions['rails'] = [::RAILS_2_VERSION]
+# gem_versions['rails'] = ['2.3.5']
+# gem_versions['ruby-debug'] = ['0.10.3']
+# gem_versions['jeweler'] = ['1.4.0']
+# gem_versions['shoulda'] = ['2.10.3']
+# gem_versions['mocha'] = ['0.9.8']
+# gem_versions['taps'] = ['>=0.3.5']
+# 
+# gem_versions.each do |name, versions|
+#   versions.uniq.each do |x|
+#     execute "install gem #{name} version #{x} on behalf of #{gem_beneficiaries[name].to_a.join(',')}" do
+#       user 'root'
+#       command "gem install #{name} --source=http://rubygems.org --source=http://gems.github.com#{" --version \"#{x}\"" unless x == 'latest'}"
+#       not_if "gem list --installed #{name}#{" --version \"#{x}\"" unless x == 'latest'}"
+#     end
+#     
+#     if x == 'latest'
+#       execute "checking latest version of #{name} on behalf of #{gem_beneficiaries[name].to_a.join(',')}" do
+#         user 'root'
+#         command "gem update #{name}"
+#       end
+#     end
+#   end
+# end
+# 
+# execute 'install rails 3' do
+#   user 'root'
+#   command 'gem install rails --pre --no-rdoc --no-ri'
+#   not_if "gem list --installed rails --version #{::RAILS_3_VERSION}"
+# end
+# 
+# execute 'install passenger module for apache2' do
+#   user 'root'
+#   cwd "/usr/lib/ruby/gems/1.8/gems/passenger-#{::PASSENGER_VERSION}"
+#   command 'rake apache2'
+#   not_if "[ -f /usr/lib/ruby/gems/1.8/gems/passenger-#{::PASSENGER_VERSION}/ext/apache2/mod_passenger.so ]"
+# end
 
 template "/etc/apache2/mods-available/passenger.conf" do
   cookbook "vagrant_main"
@@ -229,9 +229,9 @@ end
     # note that I am ignoring errors with /bin/true
   end
   
-  execute "clear out any inadvertently created real dirs from #{rails_root}" do
+  execute "clear out tmp and log from #{rails_root}" do
     user 'root'
-    command "rm -rf #{rails_root}/tmp #{rails_root}/log; /bin/true"
+    command "mkdir -p #{rails_root}/tmp; mkdir -p #{rails_root}/log; rm -rf #{rails_root}/tmp/* #{rails_root}/log/*; chown vagrant #{rails_root}/log; chown vagrant #{rails_root}/tmp; /bin/true"
     #ignoring failure
   end
 
@@ -270,11 +270,11 @@ end
       # ignoring fail
     end
     
-    execute "run bundler install for #{name}" do
-      user 'vagrant'
-      command 'bundle install'
-      cwd rails_root
-    end
+    # execute "run bundler install for #{name}" do
+    #   user 'vagrant'
+    #   command 'bundle install'
+    #   cwd rails_root
+    # end
   end
 end
 

@@ -14,4 +14,6 @@ Vagrant::Config.run do |config|
   config.chef.cookbooks_path = "vagrant/chef-repo/cookbooks"
   config.vm.forward_port "ssh", 22, 2222
   config.vm.forward_port "web", 80, 4567
+  config.vm.forward_port "web2", 8080, 5678
+  config.vm.forward_port "web3", 8090, 6789
 end
