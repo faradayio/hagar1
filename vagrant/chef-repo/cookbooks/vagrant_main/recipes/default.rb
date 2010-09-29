@@ -278,6 +278,15 @@ end
   end
 end
 
+template "/home/vagrant/.bash_aliases" do
+  cookbook "vagrant_main"
+  source ".bash_aliases.erb"
+  owner "vagrant"
+  group "vagrant"
+  mode 0644
+  variables :repos => GEMS+APPS
+end
+
 if ::APPS.include? 'wlpf1'
   execute "establish wlpf1 as the default virtualhost" do
     user 'root'
