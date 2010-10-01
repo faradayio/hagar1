@@ -86,6 +86,12 @@ cookbook_file "/usr/bin/hostsync" do
   mode '755'
 end
 
+cookbook_file '/usr/bin/gem' do
+  owner 'root'
+  source 'gem.rb'
+  mode '755'
+end
+
 # sabshere 9/30/10 TODO for app1
 # gem install for apps that don't yet have Gemfiles
 # ::APPS.each do |name|
@@ -124,6 +130,13 @@ if network?
           command "gem update #{name}"
         end
       end
+    end
+  end
+
+  %w{ http://rubyforge.org/frs/download.php/69365 http://rubyforge.org/frs/download.php/70696 }.each do |bad_url|
+    execute "don't use bad url #{bad_url}" do
+      user 'root'
+      command "sed --expression=\"s/#{bad_url.gsub('/', '\/')}/#{'http://github.com/seamusabshere/rvm/raw/master/contrib'.gsub('/', '\/')}/\" --in-place=\"\" /usr/local/rvm/config/db"
     end
   end
 end
@@ -169,12 +182,6 @@ cookbook_file '/usr/bin/ruby_version.rb' do
   mode '755'
 end
 
-cookbook_file '/usr/bin/gem' do
-  owner 'root'
-  source 'gem.rb'
-  mode '755'
-end
-
 {
   'vagrant' => '/home/vagrant',
   'root' => '/root'
@@ -189,24 +196,28 @@ end
   end
 end
 
-gem_installs = Hash.new
-gem_installs['ruby-debug'] = [/1.8.7/, 'latest']
-gem_installs['fastercsv'] = [/1.8.7/, 'latest'] # long story
-gem_installs['bundler'] = ['all', 'latest']
-gem_installs['passenger'] = ['all', ::PASSENGER_VERSION]
-gem_installs['unicorn'] = ['all', 'latest']
-gem_installs['mysql'] = ['all', 'latest']
-gem_installs['sqlite3-ruby'] = ['all', 'latest']
-gem_installs['rails'] = ['all', ::RAILS_3_VERSION]
-gem_installs['jeweler'] = ['all', 'latest']
-gem_installs['shoulda'] = ['all', 'latest']
-gem_installs['mocha'] = ['all', 'latest']
-gem_installs['taps'] = ['all', 'latest']
+gem_installs = Array.new
+gem_installs.push ['ruby-debug', /1.8.7/, 'latest']
+gem_installs.push ['fastercsv', /1.8.7/, 'latest'] # long story
+gem_installs.push ['bundler', 'all', 'latest']
+gem_installs.push ['passenger', 'all', ::PASSENGER_VERSION]
+gem_installs.push ['unicorn', 'all', 'latest']
+gem_installs.push ['mysql', 'all', 'latest']
+gem_installs.push ['sqlite3-ruby', 'all', 'latest']
+gem_installs.push ['rails', 'all', ::RAILS_3_VERSION]
+gem_installs.push ['jeweler', 'all', 'latest']
+gem_installs.push ['shoulda', 'all', 'latest']
+gem_installs.push ['mocha', 'all', 'latest']
+gem_installs.push ['taps', 'all', 'latest']
+
+execute 'make sure vagrant owns /home/vagrant/.gem' do
+  user 'root'
+  command 'chown -R vagrant /home/vagrant/.gem'
+end
 
 if network?
   ::RVM_RUBY_VERSIONS.each do |v|
-    gem_installs.each do |name, into|
-      ruby_version, gem_version = into
+    gem_installs.each do |name, ruby_version, gem_version|
       if ruby_version == 'all' or ruby_version =~ v
         execute "install gem #{name} version #{gem_version} in ruby version #{v}" do
           user 'vagrant'
