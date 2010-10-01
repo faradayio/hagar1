@@ -1,6 +1,8 @@
 <IfModule mod_passenger.c>
-  PassengerRoot /usr/lib/ruby/gems/1.8/gems/passenger-<%= @passenger_version %>
-  PassengerRuby /usr/bin/ruby1.8
+  <% @rubies.each do |ruby_version| -%>
+  <% unless ruby_version == @default_ruby_version %>#<% end %>PassengerRoot /usr/local/rvm/gems/<%= ruby_version %>/gems/passenger-<%= @passenger_version %>
+  <% unless ruby_version == @default_ruby_version %>#<% end %>PassengerRuby /usr/local/rvm/wrappers/<%= ruby_version %>/ruby
+  <% end -%>
   PassengerMaxPoolSize 6
   PassengerMaxInstancesPerApp <%= @passenger_max_instances_per_app %>
 </IfModule>

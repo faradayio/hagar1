@@ -1,0 +1,6 @@
+<% @repos.each do |repo| %>
+if [ ! `which <%= repo %>` ]
+then
+  alias <%= repo %>="cd ~/<%= repo %>"
+fi
+<% end %>

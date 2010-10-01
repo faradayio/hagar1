@@ -2,96 +2,92 @@
 # Cookbook Name:: vagrant_main
 # Recipe:: default
 #
-# Copyright 2010, Example Com
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-#     http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+
+def network?
+  node[:hagar_net] != 'false'
+end
 
 ::APPS = node[:hagar_apps]
 ::GEMS = node[:hagar_gems]
 ::PASSENGER_MAX_INSTANCES_PER_APP = 2
-::RAILS_2_VERSION = '2.3.8'
-::RAILS_3_VERSION = '3.0.0.rc2'
-::PASSENGER_VERSION = '2.2.11'
+::RAILS_2_VERSION = '2.3.9'
+::RAILS_3_VERSION = '3.0.0'
+::PASSENGER_VERSION = '2.2.15'
 ::HOME = '/home/vagrant'
 ::SHARED_FOLDER = '/vagrant'
 ::UNIVERSE = 'vagrant'
 ::MYSQL_PASSWORD = 'password'
+::RVM_RUBY_VERSIONS = %w{ ruby-1.8.7-p174 ruby-1.9.2-p0 }
+::DEFAULT_RUBY_VERSION = 'ruby-1.8.7-p174'
 
 # steal a trick from mysql::client... run the apt-get update immediately
-# a = execute 'update apt-get' do
-#   user 'root'
-#   command '/usr/bin/apt-get update'
-#   action :nothing
-# end
-# a.run_action :run
-# 
-# execute 'define /etc/universe' do
-#   user 'root'
-#   command "/bin/echo \"#{::UNIVERSE}\" > /etc/universe"
-# end
-# 
-# remote_file "/usr/bin/rep.rb" do
-#   source "rep.rb"
-#   mode '755'
-# end
-# 
-# remote_file "/usr/bin/hostsync" do
-#   source "hostsync"
-#   mode '755'
-# end
-# 
-# package 'libevent-dev'
-# require_recipe "memcached" # old memcached
-# 
-# package "mysql-server"
-# package "libmysqlclient-dev"
-# 
-# execute "ensure mysql password is set" do
-#   user 'root'
-#   command "/usr/bin/mysql -u root -e \"UPDATE mysql.user SET password = PASSWORD('#{::MYSQL_PASSWORD}'); FLUSH PRIVILEGES\""
-#   not_if "/usr/bin/mysql -u root -p#{::MYSQL_PASSWORD} -e \"FLUSH PRIVILEGES\""
-# end
-# 
-# package "sqlite3"
-# package "libsqlite3-dev"
-# 
-# ::APPS.each do |name|
-#   %w{ test development production }.each do |flavor|
-#     execute "make sure we have a #{name} #{flavor} database" do
-#       user 'vagrant'
-#       command "/usr/bin/mysql -u root -p#{::MYSQL_PASSWORD} -e 'CREATE DATABASE IF NOT EXISTS #{name}_#{flavor}'"
-#     end
-#   end
-# end  
-# 
-# package 'git-core' # for bundler when the source is git
-# package 'libcurl4-openssl-dev' # for curb
-# package 'libxml2-dev' # for libxml-ruby and nokogiri
-# package 'libxslt1-dev' # for nokogiri
-# package 'libonig-dev' # for onigurama
-# package 'imagemagick' # for paperclip
-# package 'libsasl2-dev' # for memcached
-# package 'curl' # for data_miner and remote_table
-# package 'unzip' # for remote_table
-# package 'libsaxonb-java' # for data1
-# package 'apache2' # apparently this wasn't installed by default
-# package 'apache2-prefork-dev' # for passenger
-# package 'libapr1-dev' # for passenger
-# package 'libaprutil1-dev' # for passenger
-# 
-# gem_versions = Hash.new
-# gem_beneficiaries = Hash.new
+if network?
+  a = execute 'update apt-get' do
+    user 'root'
+    command '/usr/bin/apt-get update'
+    action :nothing
+  end
+  a.run_action :run
+end
+
+if network?
+  package 'vim' # for derek
+  package 'libreadline-dev' # for 1.9.2 irb ... http://rvm.beginrescueend.com/packages/readline/
+  package 'g++' # for building passenger
+  package 'libevent-dev'
+  require_recipe "memcached" # old memcached
+  package "mysql-server"
+  package "libmysqlclient-dev"
+  package "sqlite3"
+  package "libsqlite3-dev"
+  package 'git-core' # for bundler when the source is git
+  package 'libcurl4-openssl-dev' # for curb
+  package 'libxml2-dev' # for libxml-ruby and nokogiri
+  package 'libxslt1-dev' # for nokogiri
+  package 'libonig-dev' # for onigurama
+  package 'imagemagick' # for paperclip
+  package 'libsasl2-dev' # for memcached
+  package 'curl' # for data_miner and remote_table
+  package 'unzip' # for remote_table
+  # # package 'libsaxonb-java' # for data1
+  package 'apache2' # apparently this wasn't installed by default
+  package 'apache2-prefork-dev' # for passenger
+  package 'libapr1-dev' # for passenger
+  package 'libaprutil1-dev' # for passenger
+end
+
+execute 'tell memcached to listen on all interfaces' do
+  user 'root'
+  command 'sed --expression="s/^-l/#-l/" --in-place="" /etc/memcached.conf'
+end
+
+execute "ensure mysql password is set" do
+  user 'root'
+  command "/usr/bin/mysql -u root -e \"UPDATE mysql.user SET password = PASSWORD('#{::MYSQL_PASSWORD}'); FLUSH PRIVILEGES\""
+  not_if "/usr/bin/mysql -u root -p#{::MYSQL_PASSWORD} -e \"FLUSH PRIVILEGES\""
+end
+
+::APPS.each do |name|
+  %w{ test development production }.each do |flavor|
+    execute "make sure we have a #{name} #{flavor} database" do
+      user 'vagrant'
+      command "/usr/bin/mysql -u root -p#{::MYSQL_PASSWORD} -e 'CREATE DATABASE IF NOT EXISTS #{name}_#{flavor}'"
+    end
+  end
+end
+
+execute 'define /etc/universe' do
+  user 'root'
+  command "/bin/echo \"#{::UNIVERSE}\" > /etc/universe"
+end
+
+cookbook_file "/usr/bin/hostsync" do
+  source "hostsync"
+  mode '755'
+end
+
+# sabshere 9/30/10 TODO for app1
+# gem install for apps that don't yet have Gemfiles
 # ::APPS.each do |name|
 #   proto_rails_root = File.join ::SHARED_FOLDER, 'apps_enabled', name
 #   next if File.readable?(File.join(proto_rails_root, 'Gemfile'))
@@ -109,53 +105,133 @@
 #     gem_beneficiaries[gem_name] << name
 #   end
 # end
-# 
-# #common gems
-# execute 'install bundler' do
-#   user 'root'
-#   command 'gem install bundler --pre --no-rdoc --no-ri'
-# end
-# 
-# gem_versions['passenger'] = [::PASSENGER_VERSION]
-# gem_versions['mysql'] = ['2.8.1']
-# gem_versions['sqlite3-ruby'] = ['1.2.5']
-# gem_versions['rails'] = [::RAILS_2_VERSION]
-# gem_versions['rails'] = ['2.3.5']
-# gem_versions['ruby-debug'] = ['0.10.3']
-# gem_versions['jeweler'] = ['1.4.0']
-# gem_versions['shoulda'] = ['2.10.3']
-# gem_versions['mocha'] = ['0.9.8']
-# gem_versions['taps'] = ['>=0.3.5']
-# 
-# gem_versions.each do |name, versions|
-#   versions.uniq.each do |x|
-#     execute "install gem #{name} version #{x} on behalf of #{gem_beneficiaries[name].to_a.join(',')}" do
-#       user 'root'
-#       command "gem install #{name} --source=http://rubygems.org --source=http://gems.github.com#{" --version \"#{x}\"" unless x == 'latest'}"
-#       not_if "gem list --installed #{name}#{" --version \"#{x}\"" unless x == 'latest'}"
-#     end
-#     
-#     if x == 'latest'
-#       execute "checking latest version of #{name} on behalf of #{gem_beneficiaries[name].to_a.join(',')}" do
-#         user 'root'
-#         command "gem update #{name}"
-#       end
-#     end
-#   end
-# end
-# 
-# execute 'install rails 3' do
-#   user 'root'
-#   command 'gem install rails --pre --no-rdoc --no-ri'
-#   not_if "gem list --installed rails --version #{::RAILS_3_VERSION}"
-# end
-# 
-# execute 'install passenger module for apache2' do
-#   user 'root'
-#   cwd "/usr/lib/ruby/gems/1.8/gems/passenger-#{::PASSENGER_VERSION}"
-#   command 'rake apache2'
-#   not_if "[ -f /usr/lib/ruby/gems/1.8/gems/passenger-#{::PASSENGER_VERSION}/ext/apache2/mod_passenger.so ]"
-# end
+
+if network?
+  gem_versions = Hash.new
+  gem_versions['rvm'] = ['latest']
+  gem_versions['string_replacer'] = ['latest']
+  gem_versions.each do |name, versions|
+    versions.uniq.each do |x|
+      execute "install gem #{name} version #{x}" do
+        user 'root'
+        command "gem install #{name} #{" --version \"#{x}\"" unless x == 'latest'}"
+        not_if "gem list --installed #{name}#{" --version \"#{x}\"" unless x == 'latest'}"
+      end
+    
+      if x == 'latest'
+        execute "checking latest version of #{name}" do
+          user 'root'
+          command "gem update #{name}"
+        end
+      end
+    end
+  end
+end
+
+if network?
+  remote_file "/usr/bin/rvm-install-system-wide" do
+    owner 'root'
+    source "http://bit.ly/rvm-install-system-wide"
+    mode '755'
+  end
+
+  execute 'install rvm system-wide' do
+    user 'root'
+    command 'rvm-install-system-wide'
+    ignore_failure true
+    not_if "grep rvm /etc/group"
+  end
+
+  ::RVM_RUBY_VERSIONS.each do |v|
+    execute "install #{v}" do
+      user 'root'
+      command "rvm install #{v}" # -C --with-readline-dir=/usr
+      not_if "rvm list | grep #{v}"
+    end
+  end
+end
+
+execute 'add vagrant to rvm group' do
+  user 'root'
+  command 'usermod --append --groups rvm vagrant'
+  ignore_failure true
+end
+
+execute "set #{::DEFAULT_RUBY_VERSION} as the default ruby" do
+  user 'root'
+  command "rvm --default #{::DEFAULT_RUBY_VERSION}"
+  ignore_failure true
+end
+
+cookbook_file '/usr/bin/ruby_version.rb' do
+  owner 'root'
+  source 'ruby_version.rb'
+  mode '755'
+end
+
+cookbook_file '/usr/bin/gem' do
+  owner 'root'
+  source 'gem.rb'
+  mode '755'
+end
+
+{
+  'vagrant' => '/home/vagrant',
+  'root' => '/root'
+}.each do |username, homedir|
+  execute "set up rvm as a bash function for the #{username} user" do
+    user username
+    command "string_replacer #{homedir}/.bashrc \"[[ -s \\\"/usr/local/lib/rvm\\\" ]] && . \\\"/usr/local/lib/rvm\\\"\" \"set up rvm as a bash function\""
+  end
+  execute "show current ruby version on the vagrant prompt for #{username}" do
+    user username
+    command "string_replacer #{homedir}/.bashrc \"PS1=\\\"\\\\\\\\\\\`/usr/bin/ruby_version.rb\\\\\\\\\\\` \\\$PS1\\\"\" \"current ruby version\""
+  end
+end
+
+gem_installs = Hash.new
+gem_installs['ruby-debug'] = [/1.8.7/, 'latest']
+gem_installs['fastercsv'] = [/1.8.7/, 'latest'] # long story
+gem_installs['bundler'] = ['all', 'latest']
+gem_installs['passenger'] = ['all', ::PASSENGER_VERSION]
+gem_installs['unicorn'] = ['all', 'latest']
+gem_installs['mysql'] = ['all', 'latest']
+gem_installs['sqlite3-ruby'] = ['all', 'latest']
+gem_installs['rails'] = ['all', ::RAILS_3_VERSION]
+gem_installs['jeweler'] = ['all', 'latest']
+gem_installs['shoulda'] = ['all', 'latest']
+gem_installs['mocha'] = ['all', 'latest']
+gem_installs['taps'] = ['all', 'latest']
+
+if network?
+  ::RVM_RUBY_VERSIONS.each do |v|
+    gem_installs.each do |name, into|
+      ruby_version, gem_version = into
+      if ruby_version == 'all' or ruby_version =~ v
+        execute "install gem #{name} version #{gem_version} in ruby version #{v}" do
+          user 'vagrant'
+          command "rvm #{v} gem install #{name} --no-rdoc --no-ri #{" --version \"#{gem_version}\"" unless gem_version == 'latest'}"
+          not_if "rvm #{v} gem list --installed #{name}#{" --version \"#{gem_version}\"" unless gem_version == 'latest'}"
+        end
+        if gem_version == 'latest'
+          execute "checking latest version of #{name} in ruby version #{v}" do
+            user 'vagrant'
+            command "rvm #{v} gem update #{name} --no-rdoc --no-ri"
+          end
+        end
+      end
+    end
+  end
+end
+
+::RVM_RUBY_VERSIONS.each do |ruby_version|
+  execute "prepare passenger module for apache2 in #{ruby_version}" do
+    user 'vagrant'
+    cwd "/usr/local/rvm/gems/#{ruby_version}/gems/passenger-#{::PASSENGER_VERSION}"
+    command "rvmsudo #{ruby_version} rake apache2"
+    not_if "[ -f /usr/local/rvm/gems/#{ruby_version}/gems/passenger-#{::PASSENGER_VERSION}/ext/apache2/mod_passenger.so ]"
+  end
+end
 
 template "/etc/apache2/mods-available/passenger.conf" do
   cookbook "vagrant_main"
@@ -164,8 +240,10 @@ template "/etc/apache2/mods-available/passenger.conf" do
   group "root"
   mode 0644
   variables(
-    :passenger_max_instances_per_app => ::PASSENGER_MAX_INSTANCES_PER_APP,
-    :passenger_version => ::PASSENGER_VERSION
+    :passenger_version => ::PASSENGER_VERSION,
+    :rubies => ::RVM_RUBY_VERSIONS,
+    :default_ruby_version => ::DEFAULT_RUBY_VERSION,
+    :passenger_max_instances_per_app => ::PASSENGER_MAX_INSTANCES_PER_APP
   )
 end
 
@@ -175,7 +253,11 @@ template "/etc/apache2/mods-available/passenger.load" do
   owner "root"
   group "root"
   mode 0644
-  variables :passenger_version => ::PASSENGER_VERSION
+  variables(
+    :passenger_version => ::PASSENGER_VERSION,
+    :rubies => ::RVM_RUBY_VERSIONS,
+    :default_ruby_version => ::DEFAULT_RUBY_VERSION
+  )
 end
 
 execute "enable passenger.load" do
@@ -184,18 +266,9 @@ execute "enable passenger.load" do
     unlink /etc/apache2/mods-enabled/passenger.load;
     ln -s /etc/apache2/mods-available/passenger.load /etc/apache2/mods-enabled/passenger.load;
     unlink /etc/apache2/mods-enabled/passenger.conf;
-    ln -s /etc/apache2/mods-available/passenger.conf /etc/apache2/mods-enabled/passenger.conf;
-    /bin/true
+    ln -s /etc/apache2/mods-available/passenger.conf /etc/apache2/mods-enabled/passenger.conf
   }
-end
-
-# note: currently ignoring dot-files
-::IGNORED_PATHS = %w{ .bundle .git .vagrant vagrant Vagrantfile vagrant_main }
-
-execute "clear out old enabled sites" do
-  user 'root'
-  command "/usr/bin/find /etc/apache2/sites-enabled -maxdepth 1 -type l | /usr/bin/xargs -n 1 /usr/bin/unlink; /bin/true"
-  # note that I am ignoring errors with /bin/true
+  ignore_failure true
 end
 
 ::GEMS.each do |name|
@@ -204,8 +277,8 @@ end
   
   execute "clear the way for #{gem_root}" do
     user 'vagrant'
-    command "unlink #{gem_root}; rm -rf #{gem_root}; /bin/true"
-    # ignoring failure
+    command "unlink #{gem_root}; rm -rf #{gem_root}"
+    ignore_failure true
   end
   
   execute "symbolic link #{proto_gem_root} from read-only shared dir" do
@@ -214,9 +287,19 @@ end
   end
 end
 
+execute "clear out old enabled sites" do
+  user 'root'
+  command "/usr/bin/find /etc/apache2/sites-enabled -maxdepth 1 -type l | /usr/bin/xargs -n 1 /usr/bin/unlink"
+  ignore_failure true
+end
+
+# note: currently ignoring dot-files
+::IGNORED_PATHS = %w{ .bundle .git }
+
 ::APPS.each do |name|
   proto_rails_root = File.join ::SHARED_FOLDER, 'apps_enabled', name
   rails_root = File.join ::HOME, name
+  ruby_version = File.exist?(File.join(rails_root, 'RUBY_VERSION')) ? IO.read(File.join(rails_root, 'RUBY_VERSION')).chomp : ::DEFAULT_RUBY_VERSION
     
   execute "create #{rails_root}" do
     user 'vagrant'
@@ -225,14 +308,14 @@ end
 
   execute "clear out old symlinks from #{rails_root}" do
     user 'vagrant'
-    command "/usr/bin/find #{rails_root} -maxdepth 1 -type l | /usr/bin/xargs -n 1 /usr/bin/unlink; /bin/true"
-    # note that I am ignoring errors with /bin/true
+    command "/usr/bin/find #{rails_root} -maxdepth 1 -type l | /usr/bin/xargs -n 1 /usr/bin/unlink"
+    ignore_failure true
   end
   
   execute "clear out tmp and log from #{rails_root}" do
     user 'root'
-    command "mkdir -p #{rails_root}/tmp; mkdir -p #{rails_root}/log; rm -rf #{rails_root}/tmp/* #{rails_root}/log/*; chown vagrant #{rails_root}/log; chown vagrant #{rails_root}/tmp; /bin/true"
-    #ignoring failure
+    command "mkdir -p #{rails_root}/tmp; mkdir -p #{rails_root}/log; rm -rf #{rails_root}/tmp/* #{rails_root}/log/*; chown vagrant #{rails_root}/log; chown vagrant #{rails_root}/tmp"
+    ignore_failure true
   end
 
   Dir[File.join(proto_rails_root, '*')].delete_if { |linkable_path| (::IGNORED_PATHS).include?(File.basename(linkable_path)) }.each do |linkable_path|
@@ -259,22 +342,25 @@ end
   
   execute "enable site for #{name}" do
     user 'root'
-    command "/bin/ln -s /etc/apache2/sites-available/#{name}.conf /etc/apache2/sites-enabled/#{name}.conf; /bin/true"
-    # ignoring fail
+    command "/bin/ln -s /etc/apache2/sites-available/#{name}.conf /etc/apache2/sites-enabled/#{name}.conf"
+    ignore_failure true
   end
   
-  if File.readable?(File.join(rails_root, 'Gemfile'))
+  if File.exist?(File.join(rails_root, 'Gemfile'))
     execute "make sure user can write to bundle for #{name}" do
       user 'root'
-      command "chown -R vagrant /home/vagrant/.bundle; chown -R vagrant #{rails_root}/.bundle; /bin/true"
-      # ignoring fail
+      command "chown -R vagrant /home/vagrant/.bundle; chown -R vagrant #{rails_root}/.bundle"
+      ignore_failure true
     end
     
-    # execute "run bundler install for #{name}" do
-    #   user 'vagrant'
-    #   command 'bundle install'
-    #   cwd rails_root
-    # end
+    if network?
+      execute "run bundler install for #{name}" do
+        user 'vagrant'
+        command "rvm #{ruby_version} exec bundle install"
+        cwd rails_root
+        ignore_failure true
+      end
+    end
   end
 end
 
@@ -285,6 +371,15 @@ if ::APPS.include? 'wlpf1'
   end
 end
 
+template "/home/vagrant/.bash_aliases" do
+  cookbook "vagrant_main"
+  source ".bash_aliases.erb"
+  owner "vagrant"
+  group "vagrant"
+  mode 0644
+  variables :repos => GEMS+APPS
+end
+
 execute "make sure git autocrlf is set" do
   user 'vagrant'
   command 'git config --global core.autocrlf input'
@@ -292,12 +387,12 @@ end
 
 execute 'make sure mysqld uses innodb' do
   user 'root'
-  command '/usr/bin/rep.rb /etc/mysql/my.cnf default-storage-engine=INNODB "make sure mysqld uses innodb" "[mysqld]"'
+  command 'string_replacer /etc/mysql/my.cnf default-storage-engine=INNODB "make sure mysqld uses innodb" "[mysqld]"'
 end
 
 execute 'make sure sendfile is off' do
   user 'root'
-  command '/usr/bin/rep.rb /etc/apache2/apache2.conf "EnableSendfile Off" "make sure sendfile is off" "HostnameLookups Off"'
+  command 'string_replacer /etc/apache2/apache2.conf "EnableSendfile Off" "make sure sendfile is off" "HostnameLookups Off"'
 end
 
 execute "restart apache" do

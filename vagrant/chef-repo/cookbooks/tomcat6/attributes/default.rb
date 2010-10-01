@@ -42,7 +42,53 @@ end
 
 set_unless[:tomcat6][:version]          = "6.0.18"
 set_unless[:tomcat6][:with_native]      = false
-set_unless[:tomcat6][:with_snmp]        = !languages[:java][:runtime][:name].match(/^OpenJDK/)
+# sabshere 9/28/10
+# vagrant@vagrantup:~$ cd /tmp/vagrant-chef && sudo -E chef-solo -c solo.rb -j dna.json
+# [Tue, 28 Sep 2010 09:11:33 -0700] INFO: Setting the run_list to [] from JSON
+# [Tue, 28 Sep 2010 09:11:33 -0700] INFO: Starting Chef Run (Version 0.9.8)
+# [Tue, 28 Sep 2010 09:11:37 -0700] WARN: Missing gem 'mysql'
+# [Tue, 28 Sep 2010 09:11:37 -0700] WARN: Missing gem 'right_aws'
+# [Tue, 28 Sep 2010 09:11:37 -0700] ERROR: Running exception handlers
+# [Tue, 28 Sep 2010 09:11:37 -0700] ERROR: Exception handlers complete
+# [Tue, 28 Sep 2010 09:11:37 -0700] ERROR: Re-raising exception: NoMethodError - undefined method `[]' for nil:NilClass
+# /tmp/vagrant-chef/cookbooks-0/tomcat6/attributes/default.rb:45:in `from_file'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/node.rb:531:in `load_attributes'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/node.rb:529:in `each'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/node.rb:529:in `load_attributes'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/node.rb:528:in `each'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/node.rb:528:in `load_attributes'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/run_context.rb:74:in `load'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/run_context.rb:55:in `initialize'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/client.rb:84:in `new'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/client.rb:84:in `run'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/application/solo.rb:191:in `run_application'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/application/solo.rb:181:in `loop'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/application/solo.rb:181:in `run_application'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/application.rb:62:in `run'
+#   /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/chef-solo:25
+#   /usr/bin/chef-solo:19:in `load'
+#   /usr/bin/chef-solo:19
+# /tmp/vagrant-chef/cookbooks-0/tomcat6/attributes/default.rb:45:in `from_file': undefined method `[]' for nil:NilClass (NoMethodError)
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/node.rb:531:in `load_attributes'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/node.rb:529:in `each'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/node.rb:529:in `load_attributes'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/node.rb:528:in `each'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/node.rb:528:in `load_attributes'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/run_context.rb:74:in `load'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/run_context.rb:55:in `initialize'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/client.rb:84:in `new'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/client.rb:84:in `run'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/application/solo.rb:191:in `run_application'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/application/solo.rb:181:in `loop'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/application/solo.rb:181:in `run_application'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/../lib/chef/application.rb:62:in `run'
+#   from /usr/lib/ruby/gems/1.8/gems/chef-0.9.8/bin/chef-solo:25
+#   from /usr/bin/chef-solo:19:in `load'
+#   from /usr/bin/chef-solo:19
+begin
+  set_unless[:tomcat6][:with_snmp]        = !languages[:java][:runtime][:name].match(/^OpenJDK/)
+rescue NoMethodError
+end
 set_unless[:tomcat6][:java_home]        = "/usr/lib/jvm/java"
 # snmp_opts fail with OpenJDK - results in silent exit(1) from the jre
 if tomcat6[:with_snmp]
