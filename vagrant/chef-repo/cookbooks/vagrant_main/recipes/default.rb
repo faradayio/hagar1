@@ -132,13 +132,6 @@ if network?
       end
     end
   end
-
-  %w{ http://rubyforge.org/frs/download.php/69365 http://rubyforge.org/frs/download.php/70696 }.each do |bad_url|
-    execute "don't use bad url #{bad_url}" do
-      user 'root'
-      command "sed --expression=\"s/#{bad_url.gsub('/', '\/')}/#{'http://github.com/seamusabshere/rvm/raw/master/contrib'.gsub('/', '\/')}/\" --in-place=\"\" /usr/local/rvm/config/db"
-    end
-  end
 end
 
 if network?
@@ -162,6 +155,14 @@ if network?
       not_if "rvm list | grep #{v}"
     end
   end
+  
+  # in case rubyforge goes down
+  # %w{ http://rubyforge.org/frs/download.php/69365 http://rubyforge.org/frs/download.php/70696 }.each do |bad_url|
+  #   execute "don't use bad url #{bad_url}" do
+  #     user 'root'
+  #     command "sed --expression=\"s/#{bad_url.gsub('/', '\/')}/#{'http://github.com/seamusabshere/rvm/raw/master/contrib'.gsub('/', '\/')}/\" --in-place=\"\" /usr/local/rvm/config/db"
+  #   end
+  # end
 end
 
 execute 'add vagrant to rvm group' do
@@ -170,11 +171,11 @@ execute 'add vagrant to rvm group' do
   ignore_failure true
 end
 
-execute "set #{::DEFAULT_RUBY_VERSION} as the default ruby" do
-  user 'root'
-  command "rvm --default #{::DEFAULT_RUBY_VERSION}"
-  ignore_failure true
-end
+# execute "set #{::DEFAULT_RUBY_VERSION} as the default ruby" do
+#   user 'root'
+#   command "rvm --default #{::DEFAULT_RUBY_VERSION}"
+#   ignore_failure true
+# end
 
 cookbook_file '/usr/bin/ruby_version.rb' do
   owner 'root'
@@ -185,14 +186,14 @@ end
 {
   'vagrant' => '/home/vagrant',
   'root' => '/root'
-}.each do |username, homedir|
-  execute "set up rvm as a bash function for the #{username} user" do
-    user username
-    command "string_replacer #{homedir}/.bashrc \"[[ -s \\\"/usr/local/lib/rvm\\\" ]] && . \\\"/usr/local/lib/rvm\\\"\" \"set up rvm as a bash function\""
-  end
+}.each do |username, homedir|  
   execute "show current ruby version on the vagrant prompt for #{username}" do
     user username
     command "string_replacer #{homedir}/.bashrc \"PS1=\\\"\\\\\\\\\\\`/usr/bin/ruby_version.rb\\\\\\\\\\\` \\\$PS1\\\"\" \"current ruby version\""
+  end
+  execute "set up rvm as a bash function for the #{username} user" do
+    user username
+    command "string_replacer #{homedir}/.bashrc \"[[ -s \\\"/usr/local/lib/rvm\\\" ]] && . \\\"/usr/local/lib/rvm\\\"\" \"set up rvm as a bash function\""
   end
 end
 
@@ -209,6 +210,7 @@ gem_installs.push ['jeweler', 'all', 'latest']
 gem_installs.push ['shoulda', 'all', 'latest']
 gem_installs.push ['mocha', 'all', 'latest']
 gem_installs.push ['taps', 'all', 'latest']
+gem_installs.push ['chef', 'all', 'latest']
 
 execute 'make sure vagrant owns /home/vagrant/.gem' do
   user 'root'
@@ -239,7 +241,7 @@ end
   execute "prepare passenger module for apache2 in #{ruby_version}" do
     user 'vagrant'
     cwd "/usr/local/rvm/gems/#{ruby_version}/gems/passenger-#{::PASSENGER_VERSION}"
-    command "rvmsudo #{ruby_version} rake apache2"
+    command "rvm #{ruby_version} rake apache2"
     not_if "[ -f /usr/local/rvm/gems/#{ruby_version}/gems/passenger-#{::PASSENGER_VERSION}/ext/apache2/mod_passenger.so ]"
   end
 end
