@@ -17,7 +17,7 @@ end
 ::SHARED_FOLDER = '/vagrant'
 ::UNIVERSE = 'vagrant'
 ::MYSQL_PASSWORD = 'password'
-::RVM_RUBY_VERSIONS = %w{ ruby-1.8.7-p174 ruby-1.9.2-p0 }
+::RVM_RUBY_VERSIONS = %w{ ruby-1.9.2-p0 ruby-1.8.7-p174 }
 ::DEFAULT_RUBY_VERSION = 'ruby-1.8.7-p174'
 
 # steal a trick from mysql::client... run the apt-get update immediately
@@ -215,6 +215,7 @@ gem_installs.push ['chef', 'all', 'latest']
 execute 'make sure vagrant owns /home/vagrant/.gem' do
   user 'root'
   command 'chown -R vagrant /home/vagrant/.gem'
+  ignore_failure true
 end
 
 if network?
@@ -225,11 +226,13 @@ if network?
           user 'vagrant'
           command "rvm #{v} gem install #{name} --no-rdoc --no-ri #{" --version \"#{gem_version}\"" unless gem_version == 'latest'}"
           not_if "rvm #{v} gem list --installed #{name}#{" --version \"#{gem_version}\"" unless gem_version == 'latest'}"
+          ignore_failure true
         end
         if gem_version == 'latest'
           execute "checking latest version of #{name} in ruby version #{v}" do
             user 'vagrant'
             command "rvm #{v} gem update #{name} --no-rdoc --no-ri"
+            ignore_failure true
           end
         end
       end
@@ -243,6 +246,7 @@ end
     cwd "/usr/local/rvm/gems/#{ruby_version}/gems/passenger-#{::PASSENGER_VERSION}"
     command "rvm #{ruby_version} rake apache2"
     not_if "[ -f /usr/local/rvm/gems/#{ruby_version}/gems/passenger-#{::PASSENGER_VERSION}/ext/apache2/mod_passenger.so ]"
+    ignore_failure true
   end
 end
 
@@ -360,11 +364,12 @@ end
   end
   
   if File.exist?(File.join(rails_root, 'Gemfile'))
-    execute "make sure user can write to bundle for #{name}" do
-      user 'root'
-      command "chown -R vagrant /home/vagrant/.bundle; chown -R vagrant #{rails_root}/.bundle"
-      ignore_failure true
-    end
+    # sabshere 10/4/10 this errored out a lot
+    # execute "make sure user can write to bundle for #{name}" do
+    #   user 'root'
+    #   command "chown -R vagrant /home/vagrant/.bundle; chown -R vagrant #{rails_root}/.bundle"
+    #   ignore_failure true
+    # end
     
     if network?
       execute "run bundler install for #{name}" do
