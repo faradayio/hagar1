@@ -122,7 +122,6 @@ end
 if network?
   gem_versions = Hash.new
   gem_versions['rvm'] = ['latest']
-  gem_versions['string_replacer'] = ['latest']
   gem_versions.each do |name, versions|
     versions.uniq.each do |x|
       execute "install gem #{name} version #{x}" do
@@ -190,17 +189,20 @@ cookbook_file '/usr/bin/ruby_version.rb' do
   mode '755'
 end
 
+cookbook_file '/usr/bin/add_rvm_to_bashrc.sh' do
+  owner 'root'
+  source 'add_rvm_to_bashrc.sh'
+  mode '755'
+end
+
 {
   'vagrant' => '/home/vagrant',
   'root' => '/root'
 }.each do |username, homedir|  
-  execute "show current ruby version on the vagrant prompt for #{username}" do
+  execute "add rvm stuff to .bashrc for #{username}" do
     user username
-    command "string_replacer #{homedir}/.bashrc \"PS1=\\\"\\\\\\\\\\\`/usr/bin/ruby_version.rb\\\\\\\\\\\` \\\$PS1\\\"\" \"current ruby version\""
-  end
-  execute "set up rvm as a bash function for the #{username} user" do
-    user username
-    command "string_replacer #{homedir}/.bashrc \"[[ -s \\\"/usr/local/lib/rvm\\\" ]] && . \\\"/usr/local/lib/rvm\\\"\" \"set up rvm as a bash function\""
+    cwd homedir
+    command "add_rvm_to_bashrc.sh"
   end
 end
 
@@ -412,12 +414,16 @@ end
 
 execute 'make sure mysqld uses innodb' do
   user 'root'
-  command 'string_replacer /etc/mysql/my.cnf default-storage-engine=INNODB "make sure mysqld uses innodb" "[mysqld]"'
+  # command 'string_replacer /etc/mysql/my.cnf default-storage-engine=INNODB "make sure mysqld uses innodb" "[mysqld]"'
+  command %{sed '/[mysqld]/ a default-storage-engine=INNODB' --in-place="" /etc/mysql/my.cnf}
+  not_if %{grep 'default-storage-engine=INNODB' /etc/mysql/my.cnf}
 end
 
 execute 'make sure sendfile is off' do
   user 'root'
-  command 'string_replacer /etc/apache2/apache2.conf "EnableSendfile Off" "make sure sendfile is off" "HostnameLookups Off"'
+  # command 'string_replacer /etc/apache2/apache2.conf "EnableSendfile Off" "make sure sendfile is off" "HostnameLookups Off"'
+  command %{sed '/HostnameLookups Off/ a EnableSendfile Off' --in-place="" /etc/apache2/apache2.conf}
+  not_if %{grep 'EnableSendfile Off' /etc/apache2/apache2.conf}
 end
 
 execute "restart apache" do
