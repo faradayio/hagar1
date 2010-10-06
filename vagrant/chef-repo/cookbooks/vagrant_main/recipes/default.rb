@@ -35,7 +35,6 @@ if network?
   package 'libreadline-dev' # for 1.9.2 irb ... http://rvm.beginrescueend.com/packages/readline/
   package 'g++' # for building passenger
   package 'libevent-dev'
-  require_recipe "memcached" # old memcached
   package "mysql-server"
   package "libmysqlclient-dev"
   package "sqlite3"
@@ -56,9 +55,17 @@ if network?
   package 'libaprutil1-dev' # for passenger
 end
 
+if network?
+  require_recipe "memcached" # old memcached
+end
 execute 'tell memcached to listen on all interfaces' do
   user 'root'
   command 'sed --expression="s/^-l/#-l/" --in-place="" /etc/memcached.conf'
+end
+execute 'restart memcached so that it picks up the conf change' do
+  user 'root'
+  command '/etc/init.d/memcached restart'
+  ignore_failure true
 end
 
 execute "ensure mysql password is set" do
