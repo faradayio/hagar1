@@ -11,5 +11,5 @@ if grep --silent 'ruby_version.rb' $1
 	then
 	echo "rvm prompt already added."
 else
-	sed '$ a PS1="\`/usr/bin/ruby_version.rb\` $PS1"' --in-place="" $1
+	sed '$ a PS1="\\`/usr/bin/ruby_version.rb\\` $PS1"' --in-place="" $1
 fi
