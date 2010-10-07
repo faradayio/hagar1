@@ -149,7 +149,6 @@ if network?
   execute 'install rvm system-wide' do
     user 'root'
     command 'rvm-install-system-wide'
-    ignore_failure true
     not_if "grep rvm /etc/group"
   end
 
@@ -176,11 +175,11 @@ execute 'add vagrant to rvm group' do
   ignore_failure true
 end
 
-# execute "set #{::DEFAULT_RUBY_VERSION} as the default ruby" do
-#   user 'root'
-#   command "rvm --default #{::DEFAULT_RUBY_VERSION}"
-#   ignore_failure true
-# end
+execute "set #{::DEFAULT_RUBY_VERSION} as the default ruby" do
+  user 'root'
+  command "rvm --default #{::DEFAULT_RUBY_VERSION}"
+  ignore_failure true
+end
 
 cookbook_file '/usr/bin/ruby_version.rb' do
   owner 'root'
