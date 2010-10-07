@@ -48,7 +48,6 @@ if network?
   package 'libsasl2-dev' # for memcached
   package 'curl' # for data_miner and remote_table
   package 'unzip' # for remote_table
-  # # package 'libsaxonb-java' # for data1
   package 'apache2' # apparently this wasn't installed by default
   package 'apache2-prefork-dev' # for passenger
   package 'libapr1-dev' # for passenger
@@ -196,13 +195,12 @@ cookbook_file '/usr/bin/add_rvm_to_bashrc.sh' do
 end
 
 {
-  'vagrant' => '/home/vagrant',
-  'root' => '/root'
-}.each do |username, homedir|  
+  'vagrant' => '/home/vagrant/.bashrc',
+  'root' => '/root/.bashrc'
+}.each do |username, bashrc|
   execute "add rvm stuff to .bashrc for #{username}" do
     user username
-    cwd homedir
-    command "add_rvm_to_bashrc.sh"
+    command "add_rvm_to_bashrc.sh #{bashrc}"
   end
 end
 
@@ -235,13 +233,11 @@ if network?
           user 'vagrant'
           command "rvm #{v} gem install #{name} --no-rdoc --no-ri #{" --version \"#{gem_version}\"" unless gem_version == 'latest'}"
           not_if "rvm #{v} gem list --installed #{name}#{" --version \"#{gem_version}\"" unless gem_version == 'latest'}"
-          ignore_failure true
         end
         if gem_version == 'latest'
           execute "checking latest version of #{name} in ruby version #{v}" do
             user 'vagrant'
             command "rvm #{v} gem update #{name} --no-rdoc --no-ri"
-            ignore_failure true
           end
         end
       end
@@ -334,8 +330,8 @@ end
 
   execute "clear out old symlinks from #{rails_root}" do
     user 'vagrant'
-    command "/usr/bin/find #{rails_root} -maxdepth 1 -type l | /usr/bin/xargs -n 1 /usr/bin/unlink"
-    ignore_failure true
+    command "/usr/bin/find #{rails_root} -maxdepth 1 -type l | /usr/bin/xargs -n 1 /usr/bin/unlink; /bin/true"
+    # ignore_failure true - this always returns 123 for some reason, which is annoying
   end
   
   execute "clear out tmp and log from #{rails_root}" do
@@ -415,15 +411,15 @@ end
 execute 'make sure mysqld uses innodb' do
   user 'root'
   # command 'string_replacer /etc/mysql/my.cnf default-storage-engine=INNODB "make sure mysqld uses innodb" "[mysqld]"'
-  command %{sed '/[mysqld]/ a default-storage-engine=INNODB' --in-place="" /etc/mysql/my.cnf}
-  not_if %{grep 'default-storage-engine=INNODB' /etc/mysql/my.cnf}
+  command %q{sed "/\[mysqld\]/ a default-storage-engine=INNODB" --in-place="" /etc/mysql/my.cnf}
+  not_if %q{grep 'default-storage-engine=INNODB' /etc/mysql/my.cnf}
 end
 
 execute 'make sure sendfile is off' do
   user 'root'
   # command 'string_replacer /etc/apache2/apache2.conf "EnableSendfile Off" "make sure sendfile is off" "HostnameLookups Off"'
-  command %{sed '/HostnameLookups Off/ a EnableSendfile Off' --in-place="" /etc/apache2/apache2.conf}
-  not_if %{grep 'EnableSendfile Off' /etc/apache2/apache2.conf}
+  command %q{sed '/HostnameLookups Off/ a EnableSendfile Off' --in-place="" /etc/apache2/apache2.conf}
+  not_if %q{grep 'EnableSendfile Off' /etc/apache2/apache2.conf}
 end
 
 execute "restart apache" do
