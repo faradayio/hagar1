@@ -12,7 +12,7 @@ Vagrant::Config.run do |config|
   config.vm.provisioner = :chef_solo
   config.chef.cookbooks_path = "vagrant/chef-repo/cookbooks"
   config.chef.run_list.clear
-  config.chef.add_recipe "vagrant_main"
+  config.chef.add_recipe "0_vagrant_main"
   config.vm.forward_port "ssh", 22, 2222
   config.vm.forward_port "web", 80, 4567
   config.vm.forward_port "web2", 8080, 5678

@@ -1,5 +1,5 @@
 #
-# Cookbook Name:: vagrant_main
+# Cookbook Name:: 0_vagrant_main
 # Recipe:: default
 #
 
@@ -256,7 +256,7 @@ end
 end
 
 template "/etc/apache2/mods-available/passenger.conf" do
-  cookbook "vagrant_main"
+  cookbook "0_vagrant_main"
   source "passenger.conf.erb"
   owner "root"
   group "root"
@@ -270,7 +270,7 @@ template "/etc/apache2/mods-available/passenger.conf" do
 end
 
 template "/etc/apache2/mods-available/passenger.load" do
-  cookbook "vagrant_main"
+  cookbook "0_vagrant_main"
   source "passenger.load.erb"
   owner "root"
   group "root"
@@ -349,7 +349,7 @@ end
   end
 
   template "/etc/apache2/sites-available/#{name}.conf" do
-    cookbook "vagrant_main"
+    cookbook "0_vagrant_main"
     source "web_app.conf.erb"
     owner "root"
     group "root"
@@ -395,7 +395,7 @@ if ::APPS.include? 'wlpf1'
 end
 
 template "/home/vagrant/.bash_aliases" do
-  cookbook "vagrant_main"
+  cookbook "0_vagrant_main"
   source ".bash_aliases.erb"
   owner "vagrant"
   group "vagrant"
