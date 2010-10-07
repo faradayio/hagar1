@@ -227,6 +227,7 @@ end
 
 if network?
   ::RVM_RUBY_VERSIONS.each do |v|
+    updates = Array.new
     gem_installs.each do |name, ruby_version, gem_version|
       if ruby_version == 'all' or ruby_version =~ v
         execute "install gem #{name} version #{gem_version} in ruby version #{v}" do
@@ -235,12 +236,13 @@ if network?
           not_if "rvm #{v} gem list --installed #{name}#{" --version \"#{gem_version}\"" unless gem_version == 'latest'}"
         end
         if gem_version == 'latest'
-          execute "checking latest version of #{name} in ruby version #{v}" do
-            user 'vagrant'
-            command "rvm #{v} gem update #{name} --no-rdoc --no-ri"
-          end
+          updates << name
         end
       end
+    end
+    execute "checking latest versions of #{updates.length} gems in ruby version #{v}" do
+      user 'vagrant'
+      command "rvm #{v} gem update #{updates.join(',')} --no-rdoc --no-ri"
     end
   end
 end
