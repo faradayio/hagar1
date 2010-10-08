@@ -52,6 +52,7 @@ if network?
   package 'apache2-prefork-dev' # for passenger
   package 'libapr1-dev' # for passenger
   package 'libaprutil1-dev' # for passenger
+  package 'python-pygments' # for numbers
 end
 
 if network?
@@ -65,6 +66,13 @@ execute 'restart memcached so that it picks up the conf change' do
   user 'root'
   command '/etc/init.d/memcached restart'
   ignore_failure true
+end
+
+cookbook_file "/etc/mysql/conf.d/good_mysql_defaults.cnf" do
+  owner 'root'
+  group 'root'
+  source 'good_mysql_defaults.cnf'
+  mode '644'
 end
 
 execute "ensure mysql password is set" do
@@ -206,6 +214,7 @@ end
 gem_installs = Array.new
 gem_installs.push ['ruby-debug', /1.8.7/, 'latest']
 gem_installs.push ['fastercsv', /1.8.7/, 'latest'] # long story
+gem_installs.push ['jekyll', /1.8.7/, '0.7.0']
 gem_installs.push ['bundler', 'all', 'latest']
 gem_installs.push ['passenger', 'all', ::PASSENGER_VERSION]
 gem_installs.push ['unicorn', 'all', 'latest']
@@ -407,13 +416,6 @@ end
 execute "make sure git autocrlf is set" do
   user 'vagrant'
   command 'git config --global core.autocrlf input'
-end
-
-execute 'make sure mysqld uses innodb' do
-  user 'root'
-  # command 'string_replacer /etc/mysql/my.cnf default-storage-engine=INNODB "make sure mysqld uses innodb" "[mysqld]"'
-  command %q{sed "/\[mysqld\]/ a default-storage-engine=INNODB" --in-place="" /etc/mysql/my.cnf}
-  not_if %q{grep 'default-storage-engine=INNODB' /etc/mysql/my.cnf}
 end
 
 execute 'make sure sendfile is off' do
