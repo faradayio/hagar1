@@ -10,8 +10,8 @@ end
 ::APPS = node[:hagar_apps]
 ::GEMS = node[:hagar_gems]
 ::PASSENGER_MAX_INSTANCES_PER_APP = 2
-::RAILS_2_VERSION = '2.3.9'
-::RAILS_3_VERSION = '3.0.0'
+::RAILS_2_VERSION = '2.3.10'
+::RAILS_3_VERSION = '3.0.3'
 ::PASSENGER_VERSION = '2.2.15'
 ::HOME = '/home/vagrant'
 ::SHARED_FOLDER = '/vagrant'
@@ -31,6 +31,7 @@ if network?
 end
 
 if network?
+  package 'zip' # for data1
   package 'vim' # for derek
   package 'libreadline-dev' # for 1.9.2 irb ... http://rvm.beginrescueend.com/packages/readline/
   package 'g++' # for building passenger
