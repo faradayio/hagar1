@@ -54,6 +54,7 @@ if network?
   package 'libapr1-dev' # for passenger
   package 'libaprutil1-dev' # for passenger
   package 'python-pygments' # for numbers
+  package 'redis-server' # for keyring1
 end
 
 if network?
