@@ -3,7 +3,7 @@ hagar_root = File.expand_path File.join(File.dirname(__FILE__))
 Vagrant::Config.run do |config|
   config.vm.box = "base"
   config.vm.customize do |vm|
-    vm.memory_size = 512
+    vm.memory_size = 1024
   end
   config.chef.json[:hagar_net] = ENV['NET']
   config.chef.json[:hagar_apps] = Dir[File.join(hagar_root, 'apps_enabled', '*')].map { |name| File.basename(name) }
