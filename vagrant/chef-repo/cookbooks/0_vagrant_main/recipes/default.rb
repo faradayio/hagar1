@@ -415,6 +415,14 @@ template "/home/vagrant/.bash_aliases" do
   variables :repos => GEMS+APPS
 end
 
+template "/home/vagrant/.gemrc" do
+  cookbook "0_vagrant_main"
+  source ".gemrc.erb"
+  owner "vagrant"
+  group "vagrant"
+  mode 0644
+end
+
 execute "make sure git autocrlf is set" do
   user 'vagrant'
   command 'git config --global core.autocrlf input'
