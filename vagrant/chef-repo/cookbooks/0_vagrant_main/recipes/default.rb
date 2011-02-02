@@ -18,7 +18,14 @@ end
 ::UNIVERSE = 'vagrant'
 ::MYSQL_PASSWORD = 'password'
 ::RVM_RUBY_VERSIONS = %w{ ruby-1.9.2-p0 ruby-1.8.7-p174 }
+RVM_RUBY_ALIASES = { 'ruby-1.9.2-p0' => ['9', '1.9', '1.9.2'], 'ruby-1.8.7-p174' => ['8', '1.8', '1.8.7']}
 ::DEFAULT_RUBY_VERSION = 'ruby-1.8.7-p174'
+
+if network?
+  puts '[NETWORK] The network is up!'
+else
+  puts '[NETWORK] The network is down.'
+end
 
 # steal a trick from mysql::client... run the apt-get update immediately
 if network?
@@ -211,6 +218,12 @@ end
     user username
     command "add_rvm_to_bashrc.sh #{bashrc}"
   end
+end
+
+cookbook_file '/usr/local/rvm/config/alias' do
+  owner 'root'
+  source 'rvm_aliases'
+  mode '664'
 end
 
 gem_installs = Array.new
