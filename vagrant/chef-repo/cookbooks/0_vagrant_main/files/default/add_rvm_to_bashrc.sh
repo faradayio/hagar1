@@ -6,6 +6,13 @@ else
 	sed '$ a [[ -s "/usr/local/lib/rvm" ]] && . "/usr/local/lib/rvm"' --in-place="" $1
 fi
 
+if grep --silent 'scripts/completion' $1
+	then
+	echo "rvm bash completion already added."
+else
+	sed '$ a [[ -r $rvm_path/scripts/completion ]] && . $rvm_path/scripts/completion' --in-place="" $1
+fi
+
 # put this second so it picks up on the default version
 if grep --silent 'ruby_version.rb' $1
 	then
