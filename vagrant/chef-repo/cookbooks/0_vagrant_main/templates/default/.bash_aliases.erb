@@ -4,3 +4,5 @@ then
   alias <%= repo %>="cd ~/<%= repo %>"
 fi
 <% end %>
+
+alias ku="if [ `ps ax | grep unic | grep master | grep -v grep | cut -f1 -s -d\" \"` ]; then kill `ps ax | grep unic | grep master | grep -v grep | cut -f1 -s -d\" \"`; else echo Already dead; fi"
