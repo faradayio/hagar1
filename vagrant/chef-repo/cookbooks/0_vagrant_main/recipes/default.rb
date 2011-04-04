@@ -160,7 +160,7 @@ end
 if network?
   remote_file "/usr/bin/rvm-install-system-wide" do
     owner 'root'
-    source "http://bit.ly/rvm-install-system-wide"
+    source "http://rvm.beginrescueend.com/install/rvm"
     mode '755'
   end
 
