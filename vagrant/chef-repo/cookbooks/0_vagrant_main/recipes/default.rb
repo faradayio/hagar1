@@ -17,8 +17,9 @@ end
 ::SHARED_FOLDER = '/vagrant'
 ::UNIVERSE = 'vagrant'
 ::MYSQL_PASSWORD = 'password'
-::RVM_RUBY_VERSIONS = %w{ ruby-1.9.2-p0 ruby-1.8.7-p174 }
-RVM_RUBY_ALIASES = { 'ruby-1.9.2-p0' => ['9', '1.9', '1.9.2'], 'ruby-1.8.7-p174' => ['8', '1.8', '1.8.7']}
+# 174 because it definitely doesn't have a http.rb segfault issue
+::RVM_RUBY_VERSIONS = %w{ ruby-1.9.2 ruby-1.8.7-p174 }
+RVM_RUBY_ALIASES = { 'ruby-1.9.2' => ['9', '1.9', '1.9.2'], 'ruby-1.8.7-p174' => ['8', '1.8', '1.8.7']}
 ::DEFAULT_RUBY_VERSION = 'ruby-1.8.7-p174'
 
 if network?
