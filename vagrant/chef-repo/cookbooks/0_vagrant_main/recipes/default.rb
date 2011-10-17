@@ -116,6 +116,11 @@ cookbook_file '/usr/bin/gem' do
   mode '755'
 end
 
+cookbook_file "/home/vagrant/.pgpass" do
+  source "pgpass"
+  mode '0600'
+end
+
 # sabshere 9/30/10 TODO for app1
 # gem install for apps that don't yet have Gemfiles
 # ::APPS.each do |name|
